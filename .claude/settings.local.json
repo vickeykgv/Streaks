@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gunzip -c \"C:/Users/vicke/.claude/projects/D--Projects-habit-tracker/d7cb50dd-f580-4c7a-99e2-fe4ec4048eda/tool-results/webfetch-1776441734103-0xpo9z.bin\")",
+      "Bash(echo \"Failed: $?\")",
+      "Bash(npm create *)",
+      "Bash(cp \"D:/Projects/habit-tracker-temp/package.json\" \"D:/Projects/habit-tracker/\")",
+      "Bash(cp \"D:/Projects/habit-tracker-temp/tsconfig.json\" \"D:/Projects/habit-tracker/\")",
+      "Bash(cp \"D:/Projects/habit-tracker-temp/tsconfig.app.json\" \"D:/Projects/habit-tracker/\")",
+      "Bash(cp \"D:/Projects/habit-tracker-temp/tsconfig.node.json\" \"D:/Projects/habit-tracker/\")",
+      "Bash(cp \"D:/Projects/habit-tracker-temp/vite.config.ts\" \"D:/Projects/habit-tracker/\")",
+      "Bash(npm install *)",
+      "Bash(npx tsc *)",
+      "Bash(npm run *)",
+      "Bash(cat tailwind.config.js)",
+      "Bash(cat tailwind.config.ts)",
+      "Bash(grep -E \"\\\\.tsx$\")",
+      "Bash(node scripts/generate-icons.js)"
+    ]
+  }
+}

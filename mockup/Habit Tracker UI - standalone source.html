@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Habit Tracker — UI Theme</title>
+
+<template id="__bundler_thumbnail" data-bg-color="#18181b">
+  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+    <rect x="420" y="140" width="360" height="520" rx="56" fill="#27272a" stroke="#3f3f46" stroke-width="4"/>
+    <rect x="460" y="220" width="280" height="56" rx="14" fill="#6366f1"/>
+    <rect x="460" y="300" width="280" height="56" rx="14" fill="#3f3f46"/>
+    <rect x="460" y="380" width="280" height="56" rx="14" fill="#3f3f46"/>
+    <circle cx="720" cy="584" r="36" fill="#6366f1"/>
+    <path d="M708 584 L718 594 L734 574" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</template>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=Nunito+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+
+<style>
+  :root {
+    /* Brand */
+    --brand-50:  #eef2ff;
+    --brand-100: #e0e7ff;
+    --brand-200: #c7d2fe;
+    --brand-400: #818cf8;
+    --brand-500: #6366f1;
+    --brand-600: #4f46e5;
+    --brand-700: #4338ca;
+
+    /* Surfaces */
+    --bg-app:        #f8f7f4;
+    --surface:       #ffffff;
+    --bg-surface-2:  #f1f0ed;
+
+    /* Text */
+    --text-primary:   #1a1917;
+    --text-secondary: #57534e;
+    --text-tertiary:  #a8a29e;
+
+    /* Borders */
+    --border-subtle:  #e7e5e4;
+    --border-default: #d6d3d1;
+
+    /* Status */
+    --done:       #22c55e;
+    --done-bg:    #f0fdf4;
+    --partial:    #f59e0b;
+    --partial-bg: #fffbeb;
+    --overdue:    #ef4444;
+    --overdue-bg: #fef2f2;
+    --skipped:    #94a3b8;
+    --skipped-bg: #f8fafc;
+
+    --streak:    #f97316;
+    --streak-bg: #fff7ed;
+  }
+  .dark {
+    --bg-app:       #18181b;
+    --surface:      #27272a;
+    --bg-surface-2: #3f3f46;
+    --text-primary:   #fafaf9;
+    --text-secondary: #a8a29e;
+    --text-tertiary:  #71717a;
+    --border-subtle:  #3f3f46;
+    --border-default: #52525b;
+    --done-bg:    #052e16;
+    --partial-bg: #451a03;
+    --overdue-bg: #450a0a;
+    --skipped-bg: #18181b;
+    --streak-bg:  #431407;
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0;
+    font-family: 'Nunito Sans', system-ui, sans-serif;
+    background: #e8e6e0;
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+
+  button { font-family: inherit; }
+
+  @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+  @keyframes slideUp { from { transform: translateY(100%) } to { transform: translateY(0) } }
+
+  /* Canvas container */
+  .stage {
+    min-height: 100vh;
+    padding: 60px 30px 90px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 40px;
+  }
+
+  .stage-header {
+    text-align: center;
+    max-width: 780px;
+  }
+  .stage-header h1 {
+    font-family: 'Nunito', sans-serif;
+    font-size: 42px; font-weight: 800;
+    color: #2a2823; letter-spacing: -1px;
+    margin: 0 0 8px;
+  }
+  .stage-header p {
+    font-size: 16px; color: #6b655c; margin: 0;
+    font-family: 'Nunito Sans', sans-serif;
+  }
+
+  .frame-row {
+    display: flex; gap: 48px; flex-wrap: wrap;
+    justify-content: center; align-items: flex-start;
+  }
+
+  .frame-wrap {
+    display: flex; flex-direction: column; align-items: center; gap: 14px;
+  }
+  .frame-label {
+    font-family: 'Nunito', sans-serif; font-weight: 700;
+    font-size: 13px; color: #544f47; letter-spacing: 0.4px; text-transform: uppercase;
+  }
+
+  /* Tweaks panel */
+  .tweaks {
+    position: fixed; bottom: 20px; right: 20px;
+    width: 280px; background: #fff; border-radius: 16px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.18), 0 2px 6px rgba(0,0,0,0.08);
+    padding: 16px; z-index: 100; font-family: 'Nunito', sans-serif;
+    display: none;
+  }
+  .tweaks.open { display: block; }
+  .tweaks h3 { margin: 0 0 12px; font-size: 14px; font-weight: 800; letter-spacing: 0.3px; text-transform: uppercase; color: #555; }
+  .tweak-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; gap: 10px; }
+  .tweak-row label { font-size: 13px; font-weight: 700; color: #333; }
+  .tweak-seg { display: flex; background:#f1f0ed; border-radius: 8px; padding: 2px; }
+  .tweak-seg button { padding: 5px 10px; border: none; background: transparent; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 700; color: #666; }
+  .tweak-seg button.on { background: #fff; color: #1a1917; box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
+  .hue-row { display: flex; gap: 6px; }
+  .hue-row button { width: 24px; height: 24px; border-radius: 8px; border: 2px solid transparent; cursor: pointer; }
+  .hue-row button.on { border-color: rgba(0,0,0,0.4); outline: 2px solid #fff; }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="stage-header">
+    <h1>Habit Tracker — UI Theme</h1>
+    <p>Calm productivity. Warm off-white canvas, Nunito type, indigo primary with streak orange. Every measurement type has its own tactile control. Tap cards to interact — the dashboard is live.</p>
+  </div>
+
+  <div class="frame-row" id="frames"></div>
+</div>
+
+<div class="tweaks" id="tweaks">
+  <h3>Tweaks</h3>
+  <div class="tweak-row">
+    <label>Theme</label>
+    <div class="tweak-seg" data-key="theme">
+      <button data-v="light" class="on">Light</button>
+      <button data-v="dark">Dark</button>
+    </div>
+  </div>
+  <div class="tweak-row">
+    <label>Accent</label>
+    <div class="hue-row" data-key="accent">
+      <button data-v="indigo" style="background:#6366f1" class="on"></button>
+      <button data-v="violet" style="background:#8b5cf6"></button>
+      <button data-v="teal"   style="background:#14b8a6"></button>
+      <button data-v="rose"   style="background:#f43f5e"></button>
+      <button data-v="amber"  style="background:#f59e0b"></button>
+    </div>
+  </div>
+  <div class="tweak-row">
+    <label>Density</label>
+    <div class="tweak-seg" data-key="density">
+      <button data-v="comfy" class="on">Comfy</button>
+      <button data-v="compact">Compact</button>
+    </div>
+  </div>
+  <div class="tweak-row">
+    <label>Screens</label>
+    <div class="tweak-seg" data-key="screens" style="flex-wrap:wrap">
+      <button data-v="all" class="on">All</button>
+      <button data-v="dashboard">Dashboard</button>
+      <button data-v="detail">Detail</button>
+      <button data-v="habits">Habits</button>
+      <button data-v="stats">Stats</button>
+      <button data-v="empty">Empty</button>
+      <button data-v="new">New</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // EDITMODE state — tweakable defaults
+  const DEFAULTS = /*EDITMODE-BEGIN*/{
+    "theme": "dark",
+    "accent": "indigo",
+    "density": "compact",
+    "screens": "all"
+  }/*EDITMODE-END*/;
+  window.__tweaks = { ...DEFAULTS };
+
+  const ACCENTS = {
+    indigo: { '--brand-500':'#6366f1','--brand-600':'#4f46e5','--brand-700':'#4338ca','--brand-400':'#818cf8','--brand-100':'#e0e7ff' },
+    violet: { '--brand-500':'#8b5cf6','--brand-600':'#7c3aed','--brand-700':'#6d28d9','--brand-400':'#a78bfa','--brand-100':'#ede9fe' },
+    teal:   { '--brand-500':'#14b8a6','--brand-600':'#0d9488','--brand-700':'#0f766e','--brand-400':'#2dd4bf','--brand-100':'#ccfbf1' },
+    rose:   { '--brand-500':'#f43f5e','--brand-600':'#e11d48','--brand-700':'#be123c','--brand-400':'#fb7185','--brand-100':'#ffe4e6' },
+    amber:  { '--brand-500':'#d97706','--brand-600':'#b45309','--brand-700':'#92400e','--brand-400':'#fbbf24','--brand-100':'#fef3c7' },
+  };
+
+  function applyTweaks(t) {
+    document.documentElement.classList.toggle('dark', t.theme === 'dark');
+    const a = ACCENTS[t.accent] || ACCENTS.indigo;
+    Object.entries(a).forEach(([k,v]) => document.documentElement.style.setProperty(k, v));
+    document.documentElement.style.setProperty('--density-gap', t.density === 'compact' ? '6px' : '10px');
+
+    // screen filter
+    document.querySelectorAll('.frame-wrap').forEach(el => {
+      const id = el.dataset.screen;
+      const show = t.screens === 'all' || t.screens === 'both' || t.screens === id;
+      el.style.display = show ? 'flex' : 'none';
+    });
+  }
+
+  // Tweak wiring
+  const tweaksEl = document.getElementById('tweaks');
+  tweaksEl.querySelectorAll('[data-key]').forEach(group => {
+    group.querySelectorAll('button').forEach(btn => {
+      btn.onclick = () => {
+        const k = group.dataset.key;
+        const v = btn.dataset.v;
+        window.__tweaks[k] = v;
+        group.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === btn));
+        applyTweaks(window.__tweaks);
+        try { window.parent.postMessage({ type:'__edit_mode_set_keys', edits:{[k]:v}}, '*'); } catch(e){}
+      };
+    });
+  });
+
+  window.addEventListener('message', (e) => {
+    if (e.data?.type === '__activate_edit_mode') tweaksEl.classList.add('open');
+    if (e.data?.type === '__deactivate_edit_mode') tweaksEl.classList.remove('open');
+  });
+  try { window.parent.postMessage({ type:'__edit_mode_available' }, '*'); } catch(e){}
+
+  applyTweaks(window.__tweaks);
+</script>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="frames/ios-frame.jsx"></script>
+<script type="text/babel" src="components/icons.jsx"></script>
+<script type="text/babel" src="components/controls.jsx"></script>
+<script type="text/babel" src="components/cards.jsx"></script>
+<script type="text/babel" src="components/dashboard.jsx"></script>
+<script type="text/babel" src="components/habit-detail.jsx"></script>
+<script type="text/babel" src="components/more-screens.jsx"></script>
+<script type="text/babel" src="components/new-habit.jsx"></script>
+
+<script type="text/babel">
+function Screen({ screenLabel, children }) {
+  return (
+    <div
+      data-screen-label={screenLabel}
+      style={{
+        width: '100%', height: '100%',
+        background: 'var(--bg-app)',
+        color: 'var(--text-primary)',
+        fontFamily: 'Nunito Sans, system-ui',
+        overflow: 'auto',
+        position: 'relative',
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function App() {
+  const target = document.getElementById('frames');
+  return ReactDOM.createPortal(
+    <>
+      <div className="frame-wrap" data-screen="dashboard">
+        <IOSDevice width={390} height={844} dark={false}>
+          <Screen screenLabel="01 Dashboard">
+            <Dashboard />
+          </Screen>
+        </IOSDevice>
+        <div className="frame-label">Dashboard — Today</div>
+      </div>
+
+      <div className="frame-wrap" data-screen="detail">
+        <IOSDevice width={390} height={844} dark={false}>
+          <Screen screenLabel="02 Habit detail">
+            <HabitDetail />
+          </Screen>
+        </IOSDevice>
+        <div className="frame-label">Habit detail — Read</div>
+      </div>
+
+      <div className="frame-wrap" data-screen="habits">
+        <IOSDevice width={390} height={844} dark={false}>
+          <Screen screenLabel="03 Habits list">
+            <HabitsList />
+          </Screen>
+        </IOSDevice>
+        <div className="frame-label">Habits list</div>
+      </div>
+
+      <div className="frame-wrap" data-screen="stats">
+        <IOSDevice width={390} height={844} dark={false}>
+          <Screen screenLabel="04 Stats">
+            <StatsScreen />
+          </Screen>
+        </IOSDevice>
+        <div className="frame-label">Stats</div>
+      </div>
+
+      <div className="frame-wrap" data-screen="empty">
+        <IOSDevice width={390} height={844} dark={false}>
+          <Screen screenLabel="05 Empty state">
+            <EmptyScreen />
+          </Screen>
+        </IOSDevice>
+        <div className="frame-label">Empty state</div>
+      </div>
+
+      <div className="frame-wrap" data-screen="new">
+        <IOSDevice width={390} height={844} dark={false}>
+          <Screen screenLabel="06 New habit">
+            <NewHabitScreen />
+          </Screen>
+        </IOSDevice>
+        <div className="frame-label">New habit / task</div>
+      </div>
+    </>,
+    target
+  );
+}
+
+ReactDOM.createRoot(document.createElement('div')).render(<App />);
+</script>
+
+</body>
+</html>

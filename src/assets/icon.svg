@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <rect width="512" height="512" rx="96" fill="#6366f1"/>
+  <!-- Checkmark circle -->
+  <circle cx="256" cy="220" r="110" fill="white" opacity="0.15"/>
+  <circle cx="256" cy="220" r="86" fill="white" opacity="0.2"/>
+  <!-- Checkmark -->
+  <path d="M196 220 L236 260 L316 180" stroke="white" stroke-width="28" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <!-- Streak flame shape -->
+  <path d="M256 360 C256 360 296 340 296 310 C296 290 280 280 280 280 C280 300 264 308 256 320 C248 308 232 300 232 280 C232 280 216 290 216 310 C216 340 256 360 256 360Z" fill="white" opacity="0.9"/>
+</svg>
