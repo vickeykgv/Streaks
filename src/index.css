@@ -1,0 +1,78 @@
+@import './styles/tokens.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+::-webkit-scrollbar {
+  width: 0;
+  background: transparent;
+}
+
+body {
+  margin: 0;
+  min-height: 100svh;
+  color: var(--text-primary);
+  background: rgb(var(--bg-app-rgb));
+  background-attachment: fixed;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: none;
+  z-index: -1;
+}
+
+#root {
+  min-height: 100svh;
+  position: relative;
+  isolation: isolate;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-brand-500);
+  outline-offset: 2px;
+}
+
+.glass-panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(14px);
+}
+
+.hero-panel {
+  background: var(--bg-hero);
+  border: 1px solid var(--border-default);
+  box-shadow: var(--shadow-soft);
+}
+
+.panel-elevated {
+  background: var(--bg-surface-strong);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-card);
+}
+
+.section-kicker {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.chip-soft {
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+
+.floating-nav {
+  background: color-mix(in srgb, var(--bg-surface-strong) 72%, transparent);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(14px);
+}

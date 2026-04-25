@@ -1,0 +1,93 @@
+import { useEffect, useState, type ReactNode } from 'react'
+import { BottomNav } from '@/components/BottomNav'
+import { SideNav } from '@/components/SideNav'
+import { UpdateToast } from '@/components/UpdateToast'
+import { InstallPrompt } from '@/components/InstallPrompt'
+import { BottomSheet, Modal } from '@/components/ui'
+import Editor from '@/routes/Editor'
+import { useAppStore } from '@/store/appStore'
+
+interface AppShellProps {
+  children: ReactNode
+}
+
+export function AppShell({ children }: AppShellProps) {
+  const isOnline = useAppStore(s => s.isOnline)
+  const createComposer = useAppStore(s => s.createComposer)
+  const closeCreateComposer = useAppStore(s => s.closeCreateComposer)
+  const [isDesktop, setIsDesktop] = useState(() =>
+    typeof window !== 'undefined' ? window.matchMedia('(min-width: 1024px)').matches : false,
+  )
+
+  useEffect(() => {
+    const onOnline  = () => useAppStore.getState().setOnline(true)
+    const onOffline = () => useAppStore.getState().setOnline(false)
+    window.addEventListener('online',  onOnline)
+    window.addEventListener('offline', onOffline)
+    return () => {
+      window.removeEventListener('online',  onOnline)
+      window.removeEventListener('offline', onOffline)
+    }
+  }, [])
+
+  useEffect(() => {
+    const media = window.matchMedia('(min-width: 1024px)')
+    const sync = (event?: MediaQueryListEvent) => setIsDesktop(event ? event.matches : media.matches)
+    sync()
+    media.addEventListener('change', sync)
+    return () => media.removeEventListener('change', sync)
+  }, [])
+
+  return (
+    <div className="relative min-h-screen overflow-x-clip bg-app">
+      {!isOnline && (
+        <div className="fixed left-1/2 top-3 z-50 -translate-x-1/2 rounded-full border border-[var(--border-default)] bg-[rgba(30,31,34,0.9)] px-4 py-1.5 text-xs font-semibold text-white shadow-lg backdrop-blur">
+          Offline mode
+        </div>
+      )}
+
+      {/* Desktop sidebar — fixed left, hidden on mobile */}
+      <SideNav />
+
+      {/* Main content — shifted right by the collapsed sidebar width on desktop */}
+      <div className="lg:ml-[112px]">
+        {children}
+      </div>
+
+      {/* Bottom nav — fixed at bottom, hidden on desktop */}
+      <BottomNav />
+
+      <UpdateToast />
+      <InstallPrompt />
+
+      {isDesktop ? (
+        <Modal
+          open={createComposer.open}
+          onClose={closeCreateComposer}
+          size="lg"
+        >
+          <Editor
+            embedded
+            initialMode={createComposer.type}
+            defaultWorld={createComposer.world}
+            onClose={closeCreateComposer}
+            onSaved={closeCreateComposer}
+          />
+        </Modal>
+      ) : (
+        <BottomSheet
+          open={createComposer.open}
+          onClose={closeCreateComposer}
+        >
+          <Editor
+            embedded
+            initialMode={createComposer.type}
+            defaultWorld={createComposer.world}
+            onClose={closeCreateComposer}
+            onSaved={closeCreateComposer}
+          />
+        </BottomSheet>
+      )}
+    </div>
+  )
+}

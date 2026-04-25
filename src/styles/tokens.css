@@ -1,0 +1,179 @@
+/* src/styles/tokens.css */
+
+:root {
+  --color-brand-50: #ffe7ea;
+  --color-brand-100: #ffc8cf;
+  --color-brand-200: #ff9ba7;
+  --color-brand-400: #f55466;
+  --color-brand-500: #e50914;
+  --color-brand-600: #c40812;
+  --color-brand-700: #9f0710;
+
+  --color-accent-1: #ff6b5f;
+  --color-accent-2: #1db954;
+  --color-accent-3: #ffb457;
+
+  --bg-app: #141414;
+  --bg-app-rgb: 20, 20, 20;
+  --bg-surface: rgba(28, 28, 28, 0.88);
+  --bg-surface-strong: #1c1c1c;
+  --bg-surface-2: rgba(39, 39, 39, 0.96);
+  --bg-surface-3: rgba(49, 49, 49, 0.96);
+  --bg-overlay: rgba(0, 0, 0, 0.56);
+  --bg-base: var(--bg-app);
+  --bg-hero:
+    #1e1e1e;
+
+  --text-primary: #ffffff;
+  --text-secondary: #c7c7c7;
+  --text-tertiary: #8b8b8b;
+  --text-inverse: #141414;
+  --text-brand: #ff7b82;
+  --text-on-brand: #ffffff;
+  --text-on-success: #ffffff;
+  --text-on-danger: #ffffff;
+
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-default: rgba(255, 255, 255, 0.14);
+  --border-strong: rgba(255, 255, 255, 0.24);
+  --border-brand: rgba(229, 9, 20, 0.28);
+
+  --color-done: #1db954;
+  --color-done-bg: rgba(29, 185, 84, 0.16);
+  --color-partial: #ffb457;
+  --color-partial-bg: rgba(255, 180, 87, 0.16);
+  --color-overdue: #ff5c69;
+  --color-overdue-bg: rgba(255, 92, 105, 0.14);
+  --color-skipped: #8e8e93;
+  --color-skipped-bg: rgba(142, 142, 147, 0.14);
+
+  --color-priority-high: #ff5c69;
+  --color-priority-med: #ffb457;
+  --color-priority-low: #8e8e93;
+
+  --color-streak: #ffb457;
+  --color-streak-bg: rgba(255, 180, 87, 0.14);
+
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.32);
+  --shadow-sm: 0 8px 22px rgba(0, 0, 0, 0.22);
+  --shadow-md: 0 16px 38px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 24px 56px rgba(0, 0, 0, 0.38);
+  --shadow-card: 0 10px 28px rgba(0, 0, 0, 0.22);
+  --shadow-soft: 0 16px 34px rgba(229, 9, 20, 0.1);
+  --shadow-glow: 0 12px 28px rgba(229, 9, 20, 0.22);
+  --shadow-fab: 0 16px 30px rgba(229, 9, 20, 0.28);
+
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 28px;
+  --radius-full: 9999px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-slow: 350ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+  --font-sans: 'Nunito', system-ui, sans-serif;
+  --font-body: 'Nunito Sans', system-ui, sans-serif;
+
+  --z-base: 0;
+  --z-card: 1;
+  --z-sticky: 10;
+  --z-overlay: 40;
+  --z-modal: 50;
+  --z-toast: 60;
+}
+
+.dark {
+  --color-brand-50: #331114;
+  --color-brand-100: #4a1317;
+  --color-brand-200: #68181d;
+  --color-brand-400: #f55466;
+  --color-brand-500: #e50914;
+  --color-brand-600: #ff6b5f;
+  --color-brand-700: #ff9b93;
+
+  --bg-app: #141414;
+  --bg-app-rgb: 20, 20, 20;
+  --bg-surface: rgba(28, 28, 28, 0.9);
+  --bg-surface-strong: #1c1c1c;
+  --bg-surface-2: rgba(39, 39, 39, 0.96);
+  --bg-surface-3: rgba(49, 49, 49, 0.96);
+  --bg-overlay: rgba(0, 0, 0, 0.72);
+  --bg-base: var(--bg-app);
+  --bg-hero:
+    #1e1e1e;
+
+  --text-primary: #ffffff;
+  --text-secondary: #c7c7c7;
+  --text-tertiary: #8b8b8b;
+  --text-inverse: #141414;
+  --text-brand: #ff7b82;
+  --text-on-brand: #ffffff;
+  --text-on-success: #ffffff;
+  --text-on-danger: #ffffff;
+
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-default: rgba(255, 255, 255, 0.14);
+  --border-strong: rgba(255, 255, 255, 0.24);
+  --border-brand: rgba(229, 9, 20, 0.28);
+
+  --color-done-bg: rgba(29, 185, 84, 0.16);
+  --color-partial-bg: rgba(255, 180, 87, 0.16);
+  --color-overdue-bg: rgba(255, 92, 105, 0.16);
+  --color-skipped-bg: rgba(142, 142, 147, 0.16);
+  --color-streak-bg: rgba(255, 180, 87, 0.16);
+
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 8px 22px rgba(0, 0, 0, 0.22);
+  --shadow-md: 0 16px 38px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 24px 56px rgba(0, 0, 0, 0.38);
+  --shadow-card: 0 10px 28px rgba(0, 0, 0, 0.22);
+  --shadow-soft: 0 16px 34px rgba(229, 9, 20, 0.08);
+  --shadow-glow: 0 12px 28px rgba(229, 9, 20, 0.18);
+  --shadow-fab: 0 16px 30px rgba(229, 9, 20, 0.22);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--text-primary);
+  background-color: var(--bg-app);
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
+}
+
+*, *::before, *::after {
+  transition:
+    background-color var(--duration-base) var(--ease-in-out),
+    border-color var(--duration-base) var(--ease-in-out),
+    color var(--duration-base) var(--ease-in-out),
+    box-shadow var(--duration-base) var(--ease-in-out);
+}
+
+button, a, input, select, textarea {
+  transition: none;
+}
+
+::selection {
+  background: rgba(255, 143, 77, 0.32);
+  color: var(--text-primary);
+}
