@@ -33,6 +33,7 @@ export default defineConfig({
       },
     }),
   ],
+  base: '/Streaks/',
   resolve: {
     alias: {
       '@': '/src',
