@@ -13,7 +13,7 @@ import Settings    from '@/routes/Settings'
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <AppShell>
         <Routes>
           <Route path="/"                   element={<Dashboard />} />

@@ -216,7 +216,7 @@ export default function Editor({
           onClose={onClose}
         />
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
           <div className="mx-auto flex max-w-[560px] flex-col gap-4 pb-4">
             {isHabit ? (
               <form id="embedded-create-form" onSubmit={habitForm.handleSubmit(handleHabitSubmit)} className="flex flex-col gap-4">
@@ -352,16 +352,11 @@ function EmbeddedHeader({
   onClose?: () => void
 }) {
   return (
-    <div className="shrink-0 border-b border-[var(--border-subtle)] px-4 pb-3 pt-2 sm:px-5 sm:pt-4">
+    <div className="shrink-0 border-b border-[var(--border-subtle)] px-4 pb-3 pt-3 sm:px-5">
       <div className="mb-3 flex items-center justify-between gap-3">
-        <div>
-          <p className="font-sans text-[18px] font-extrabold tracking-tight text-[var(--text-primary)]">
-            Create a new item
-          </p>
-          <p className="mt-1 text-[13px] text-[var(--text-secondary)]">
-            Start with the essentials and add details only if you need them.
-          </p>
-        </div>
+        <p className="font-sans text-[18px] font-extrabold tracking-tight text-[var(--text-primary)]">
+          Create new
+        </p>
         <button
           type="button"
           onClick={onClose}
@@ -403,7 +398,7 @@ function EmbeddedFooter({
   onCancel?: () => void
 }) {
   return (
-    <div className="shrink-0 border-t border-[var(--border-subtle)] px-4 py-3 sm:px-5">
+    <div className="shrink-0 border-t border-[var(--border-subtle)] px-4 pt-3 pb-[max(12px,env(safe-area-inset-bottom))] sm:px-5">
       <div className="mx-auto flex max-w-[560px] gap-3">
         <button
           type="button"
