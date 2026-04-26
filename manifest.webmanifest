@@ -1,13 +1,13 @@
 {
-  "name": "Habit Tracker",
-  "short_name": "Habits",
-  "description": "Track your habits and tasks with streaks, reminders, and sync.",
+  "name": "Streaks",
+  "short_name": "Streaks",
+  "description": "Build lasting habits and track your streaks with reminders and sync.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#ffffff",
-  "theme_color": "#6366f1",
+  "theme_color": "#CC2200",
   "categories": ["productivity", "lifestyle"],
   "icons": [
     { "src": "icons/icon-72.png",  "sizes": "72x72",   "type": "image/png" },
