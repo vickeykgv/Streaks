@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Bell, Plus, AlertCircle, Search, Briefcase, Home, ChevronDown, Check, MoreVertical, Eye, Pencil, Trash2 } from 'lucide-react'
-import { EmptyState } from '@/components/ui'
+import { Bell, Plus, AlertCircle, Search, Briefcase, Home, ChevronDown, Check, MoreVertical, Eye, Pencil, Trash2, Sparkles } from 'lucide-react'
+import { EmptyState, ConfirmDialog } from '@/components/ui'
+import { toast } from '@/store/toastStore'
 import { format, parseISO, subDays, addDays } from 'date-fns'
 import { useDashboard } from '@/hooks/useDashboard'
 import { MeasurementPopup } from '@/components/MeasurementPopup'
@@ -328,6 +329,7 @@ type TodayItem =
 function TodayRow({ item, onTap }: { item: TodayItem; onTap: (item: TodayItem) => void }) {
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [confirmOpen, setConfirmOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -351,10 +353,9 @@ function TodayRow({ item, onTap }: { item: TodayItem; onTap: (item: TodayItem) =
   const handleView   = () => { setMenuOpen(false); navigate(isHabit ? `/habits/${id}` : `/tasks/${id}`) }
   const handleEdit   = () => { setMenuOpen(false); navigate(`/edit/${isHabit ? 'habit' : 'task'}/${id}`) }
   const handleDelete = async () => {
-    setMenuOpen(false)
-    if (!window.confirm(`Delete "${title}"?`)) return
     if (isHabit) await habitsRepo.delete(id)
     else await tasksRepo.delete(id)
+    toast.success(`"${title}" deleted`)
   }
 
   return (
@@ -474,7 +475,7 @@ function TodayRow({ item, onTap }: { item: TodayItem; onTap: (item: TodayItem) =
             </button>
             <div style={{ height: '1px', background: 'var(--border-subtle)' }} />
             <button
-              onClick={handleDelete}
+              onClick={e => { e.stopPropagation(); setMenuOpen(false); setConfirmOpen(true) }}
               className="w-full flex items-center gap-2.5 px-4 py-3 text-left transition-colors font-sans text-[13px] font-semibold hover:bg-[var(--bg-surface-2)]"
               style={{ color: 'var(--color-overdue)' }}
             >
@@ -483,6 +484,16 @@ function TodayRow({ item, onTap }: { item: TodayItem; onTap: (item: TodayItem) =
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={handleDelete}
+        danger
+        title={`Delete "${title}"?`}
+        description={isHabit ? 'This will permanently remove the habit and all its history.' : 'This action cannot be undone.'}
+        confirmLabel="Delete"
+      />
     </div>
   )
 }
@@ -913,14 +924,13 @@ export default function Dashboard() {
            overdueTasks.length === 0 && doneHabits.length === 0 && doneTasks.length === 0 && (
             <EmptyState
               hero
-              emoji="🌱"
+              icon={<Sparkles size={26} strokeWidth={1.8} />}
               headline={isViewingToday ? 'Your journey starts here' : 'Nothing on this day'}
               subheadline={
                 isViewingToday
                   ? 'Build one habit at a time — small wins compound into big results.'
                   : 'No habits or tasks were scheduled for this date.'
               }
-              ideas={isViewingToday ? ['Morning stretch', 'Drink water', 'Read 20 min', 'Walk outside'] : undefined}
               action={isViewingToday ? { label: '+ Add first habit', onClick: () => openCreateComposer('habit', world) } : undefined}
             />
           )}

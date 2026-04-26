@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Plus } from 'lucide-react'
+import { Plus, ClipboardList, CheckCircle2, FolderOpen } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { tasksRepo } from '@/db/repos/tasks'
 import { tagsRepo } from '@/db/repos/tags'
@@ -127,7 +127,7 @@ export default function Tasks() {
               {overdue.length === 0 && dueToday.length === 0 && upcoming.length === 0 && (
                 <div className="glass-panel rounded-[28px]">
                   <EmptyState
-                    emoji="📋"
+                    icon={<ClipboardList size={22} strokeWidth={1.8} />}
                     headline="No pending tasks"
                     subheadline="You're all caught up! Add a task to stay on top of your goals."
                     action={{ label: '+ Add task', onClick: () => openCreateComposer('task') }}
@@ -141,7 +141,7 @@ export default function Tasks() {
               {done.length > 0 ? done.map(t => <TaskRow key={t.id} task={t} />) : (
                 <div className="glass-panel rounded-[28px]">
                   <EmptyState
-                    emoji="✅"
+                    icon={<CheckCircle2 size={22} strokeWidth={1.8} />}
                     headline="Nothing completed yet"
                     subheadline="Tasks you finish will show up here. Keep going!"
                   />
@@ -156,7 +156,7 @@ export default function Tasks() {
                 : (
                   <div className="glass-panel rounded-[28px]">
                     <EmptyState
-                      emoji="🗂️"
+                      icon={<FolderOpen size={22} strokeWidth={1.8} />}
                       headline="No tasks yet"
                       subheadline="One-off goals, deadlines, and errands — add anything here."
                       action={{ label: '+ Create task', onClick: () => openCreateComposer('task') }}

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Search, ChevronRight, Flame, Plus } from 'lucide-react'
+import { Search, ChevronRight, Flame, Plus, Sparkles, SearchX } from 'lucide-react'
 import { habitsRepo } from '@/db/repos/habits'
 import { entriesRepo } from '@/db/repos/entries'
 import { tagsRepo } from '@/db/repos/tags'
@@ -99,14 +99,15 @@ export default function Habits() {
             <div className="glass-panel rounded-[28px]">
               <EmptyState
                 hero
-                emoji={search || filterTag ? '🔍' : '✨'}
+                icon={search || filterTag
+                  ? <SearchX size={26} strokeWidth={1.8} />
+                  : <Sparkles size={26} strokeWidth={1.8} />}
                 headline={search || filterTag ? 'No matching habits' : 'No habits yet'}
                 subheadline={
                   search || filterTag
                     ? 'Try a different search or clear your filters.'
-                    : 'Consistency is the key. Add your first habit and start building your streak today.'
+                    : 'Add your first habit and start building your streak.'
                 }
-                ideas={!search && !filterTag ? ['Morning run', 'Meditate 10 min', 'Read daily', 'Drink 8 glasses'] : undefined}
                 action={
                   !search && !filterTag
                     ? { label: '+ Create first habit', onClick: () => openCreateComposer('habit') }

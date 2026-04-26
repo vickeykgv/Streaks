@@ -9,6 +9,8 @@ import type { Habit, Task, World } from '@/types'
 import { MEASUREMENT_TYPES, PRIORITY_OPTIONS } from '@/lib/constants'
 import { habitsRepo } from '@/db/repos/habits'
 import { tasksRepo } from '@/db/repos/tasks'
+import { ConfirmDialog } from '@/components/ui'
+import { toast } from '@/store/toastStore'
 import { ColorPicker } from '@/components/ColorPicker'
 import { IconPicker } from '@/components/IconPicker'
 import { TagInput } from '@/components/TagInput'
@@ -164,8 +166,10 @@ export default function Editor({
 
     if (isEdit) {
       await habitsRepo.update(id!, payload)
+      toast.success('Habit updated')
     } else {
       await habitsRepo.create(payload)
+      toast.success('Habit created')
     }
 
     finish()
@@ -180,8 +184,10 @@ export default function Editor({
 
     if (isEdit) {
       await tasksRepo.update(id!, payload)
+      toast.success('Task updated')
     } else {
       await tasksRepo.create(payload)
+      toast.success('Task created')
     }
 
     finish()
@@ -190,8 +196,10 @@ export default function Editor({
   const handleDelete = async () => {
     if (type === 'habit') {
       await habitsRepo.archive(id!)
+      toast.success('Habit archived')
     } else {
       await tasksRepo.delete(id!)
+      toast.success('Task deleted')
     }
     navigate('/')
   }
@@ -310,33 +318,17 @@ export default function Editor({
           </form>
         )}
 
-        {showDeleteConfirm && (
-          <div className="fixed inset-0 z-50 flex items-end bg-black/40" onClick={() => setShowDeleteConfirm(false)}>
-            <div className="flex w-full flex-col gap-3 rounded-t-2xl bg-surface p-5" onClick={e => e.stopPropagation()}>
-              <p className="font-sans text-[16px] font-bold text-[var(--text-primary)]">
-                {mode === 'habit' ? 'Archive this habit?' : 'Delete this task?'}
-              </p>
-              <p className="font-body text-[14px] text-[var(--text-secondary)]">
-                {mode === 'habit'
-                  ? 'It will be hidden from your lists but history is preserved.'
-                  : 'This action cannot be undone.'}
-              </p>
-              <button
-                onClick={handleDelete}
-                className="h-11 w-full rounded-xl font-sans text-[14px] font-extrabold text-white"
-                style={{ background: 'var(--color-overdue)' }}
-              >
-                {mode === 'habit' ? 'Archive' : 'Delete'}
-              </button>
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="h-11 w-full rounded-xl bg-surface2 font-sans text-[14px] font-bold text-[var(--text-secondary)]"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        )}
+        <ConfirmDialog
+          open={showDeleteConfirm}
+          onClose={() => setShowDeleteConfirm(false)}
+          onConfirm={handleDelete}
+          danger
+          title={mode === 'habit' ? 'Archive this habit?' : 'Delete this task?'}
+          description={mode === 'habit'
+            ? 'It will be hidden from your lists but history is preserved.'
+            : 'This action cannot be undone.'}
+          confirmLabel={mode === 'habit' ? 'Archive' : 'Delete'}
+        />
       </div>
     </div>
   )
