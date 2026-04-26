@@ -41,17 +41,15 @@ export function MeasurementPopup({ habit, entry, task, date, onClose }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end"
+      className="fixed inset-0 z-50 flex items-center justify-center px-4"
       style={{ background: 'rgba(0,0,0,0.55)' }}
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg mx-auto rounded-t-3xl p-5 flex flex-col gap-5"
-        style={{ background: 'var(--bg-surface)' }}
+        className="w-full max-w-sm rounded-3xl p-5 flex flex-col gap-5"
+        style={{ background: 'var(--bg-surface)', boxShadow: '0 24px 64px rgba(0,0,0,0.5)' }}
         onClick={e => e.stopPropagation()}
       >
-        {/* Handle bar */}
-        <div className="w-10 h-1 rounded-full mx-auto" style={{ background: 'var(--border-default)' }} />
 
         {/* Header */}
         <div className="flex items-center gap-3">
