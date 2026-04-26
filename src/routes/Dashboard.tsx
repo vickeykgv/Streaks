@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Bell, Plus, AlertCircle, Search, Briefcase, Home, ChevronDown, Check } from 'lucide-react'
+import { Bell, Plus, AlertCircle, Search, Briefcase, Home, ChevronDown, Check, MoreVertical, Eye, Pencil, Trash2 } from 'lucide-react'
+import { EmptyState } from '@/components/ui'
 import { format, parseISO, subDays, addDays } from 'date-fns'
 import { useDashboard } from '@/hooks/useDashboard'
 import { MeasurementPopup } from '@/components/MeasurementPopup'
@@ -326,7 +327,20 @@ type TodayItem =
 
 function TodayRow({ item, onTap }: { item: TodayItem; onTap: (item: TodayItem) => void }) {
   const navigate = useNavigate()
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!menuOpen) return
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [menuOpen])
+
   const isHabit = item.kind === 'habit'
+  const id    = isHabit ? item.habit.id    : item.task.id
   const color = isHabit ? item.habit.color : item.task.color
   const icon  = isHabit ? item.habit.icon  : item.task.icon
   const title = isHabit ? item.habit.title : item.task.title
@@ -334,32 +348,47 @@ function TodayRow({ item, onTap }: { item: TodayItem; onTap: (item: TodayItem) =
     ? isEntryComplete(item.entry, item.habit)
     : item.task.status === 'done'
 
-  const handleNavigate = () => {
-    if (isHabit) navigate(`/habits/${item.habit.id}`)
-    else navigate(`/tasks/${item.task.id}`)
+  const handleView   = () => { setMenuOpen(false); navigate(isHabit ? `/habits/${id}` : `/tasks/${id}`) }
+  const handleEdit   = () => { setMenuOpen(false); navigate(`/edit/${isHabit ? 'habit' : 'task'}/${id}`) }
+  const handleDelete = async () => {
+    setMenuOpen(false)
+    if (!window.confirm(`Delete "${title}"?`)) return
+    if (isHabit) await habitsRepo.delete(id)
+    else await tasksRepo.delete(id)
   }
 
   return (
     <div
-      className="glass-panel flex items-center gap-3 px-3.5 py-3.5 rounded-[24px]"
+      role="button"
+      tabIndex={0}
+      className="glass-panel flex items-center gap-3 px-3.5 py-3.5 rounded-[24px] cursor-pointer active:scale-[0.99] transition-transform select-none"
       style={{
         background: done ? 'var(--color-done-bg)' : 'var(--bg-surface)',
         border: done ? '1px solid #22c55e28' : '1px solid var(--border-subtle)',
+        position: 'relative',
+        zIndex: menuOpen ? 10 : undefined,
       }}
+      onClick={() => onTap(item)}
+      onKeyDown={e => e.key === 'Enter' && onTap(item)}
     >
-      {/* Colored icon */}
-      <button
-        type="button"
-        onClick={handleNavigate}
-        className="w-12 h-12 rounded-[18px] flex items-center justify-center shrink-0 text-[24px]"
+      {/* Icon with done overlay */}
+      <div
+        className="relative w-12 h-12 rounded-[18px] flex items-center justify-center shrink-0 text-[24px]"
         style={{ background: `${color}22` }}
-        aria-label={`Open ${title}`}
       >
         {icon}
-      </button>
+        {done && (
+          <div
+            className="absolute inset-0 rounded-[18px] flex items-center justify-center"
+            style={{ background: 'rgba(34,197,94,0.78)' }}
+          >
+            <Check size={20} color="#fff" strokeWidth={3} />
+          </div>
+        )}
+      </div>
 
       {/* Title + chips */}
-      <div className="flex-1 min-w-0 cursor-pointer" onClick={handleNavigate}>
+      <div className="flex-1 min-w-0">
         <p
           className="font-sans font-bold text-[15px] leading-tight truncate"
           style={{
@@ -393,20 +422,67 @@ function TodayRow({ item, onTap }: { item: TodayItem; onTap: (item: TodayItem) =
         </div>
       </div>
 
-      {/* Completion circle */}
+      {/* Completion checkbox */}
       <button
         type="button"
         onClick={e => { e.stopPropagation(); onTap(item) }}
-        className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-all duration-200 active:scale-90"
+        className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0 transition-all duration-200 active:scale-90"
         style={{
           border: `2px solid ${done ? 'var(--color-done)' : 'var(--border-default)'}`,
           background: done ? 'var(--color-done)' : 'transparent',
-          boxShadow: done ? '0 0 0 4px rgba(34,197,94,0.15)' : 'none',
+          boxShadow: done ? '0 0 0 3px rgba(34,197,94,0.18)' : 'none',
         }}
         aria-label={done ? 'Mark incomplete' : 'Mark complete'}
       >
-        {done && <Check size={16} color="#fff" strokeWidth={3} />}
+        {done && <Check size={15} color="#fff" strokeWidth={3} />}
       </button>
+
+      {/* 3-dot action menu */}
+      <div className="relative shrink-0" ref={menuRef}>
+        <button
+          type="button"
+          onClick={e => { e.stopPropagation(); setMenuOpen(o => !o) }}
+          className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
+          style={{ background: menuOpen ? 'var(--bg-surface-2)' : 'transparent' }}
+          aria-label="More actions"
+        >
+          <MoreVertical size={17} color="var(--text-tertiary)" />
+        </button>
+        {menuOpen && (
+          <div
+            className="absolute right-0 top-full mt-1 z-50 rounded-2xl overflow-hidden min-w-[152px]"
+            style={{
+              background: 'var(--bg-surface)',
+              border: '1px solid var(--border-subtle)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.40)',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              onClick={handleView}
+              className="w-full flex items-center gap-2.5 px-4 py-3 text-left transition-colors font-sans text-[13px] font-semibold hover:bg-[var(--bg-surface-2)]"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              <Eye size={14} /> View
+            </button>
+            <button
+              onClick={handleEdit}
+              className="w-full flex items-center gap-2.5 px-4 py-3 text-left transition-colors font-sans text-[13px] font-semibold hover:bg-[var(--bg-surface-2)]"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              <Pencil size={14} /> Edit
+            </button>
+            <div style={{ height: '1px', background: 'var(--border-subtle)' }} />
+            <button
+              onClick={handleDelete}
+              className="w-full flex items-center gap-2.5 px-4 py-3 text-left transition-colors font-sans text-[13px] font-semibold hover:bg-[var(--bg-surface-2)]"
+              style={{ color: 'var(--color-overdue)' }}
+            >
+              <Trash2 size={14} /> Delete
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -599,13 +675,73 @@ export default function Dashboard() {
         </div>
       </header>
 
-      {/* World switcher — mobile only */}
-      <div className="lg:hidden px-4 py-3">
+      {/* ── Mobile: world switcher + compact summary bar ───────────── */}
+      <div className="lg:hidden px-4 pt-3 pb-2 flex flex-col gap-2">
         <WorldSwitcher world={world} onChange={switchWorld} />
+
+        {/* Slim progress + stats strip */}
+        <div
+          className="glass-panel rounded-2xl px-4 py-3"
+          style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}
+        >
+          {/* Top row: label + streak + pct */}
+          <div className="flex items-center justify-between mb-2">
+            <span className="font-sans font-extrabold text-[13px]" style={{ color: 'var(--text-primary)' }}>
+              {allDone && totalToday > 0 ? '🎉 All done!' : `${doneToday} of ${totalToday} done`}
+            </span>
+            <div className="flex items-center gap-2.5">
+              {bestStreak > 0 && (
+                <span className="font-sans font-bold text-[12px]" style={{ color: 'var(--color-streak)' }}>
+                  🔥{bestStreak}d
+                </span>
+              )}
+              <span
+                className="font-sans font-extrabold text-[12px] px-2 py-0.5 rounded-full"
+                style={{
+                  background: allDone && totalToday > 0 ? 'rgba(34,197,94,0.12)' : 'rgba(99,102,241,0.12)',
+                  color: allDone && totalToday > 0 ? 'var(--color-done)' : 'var(--color-brand-500)',
+                }}
+              >
+                {pct}%
+              </span>
+            </div>
+          </div>
+
+          {/* Progress bar */}
+          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-surface-2)' }}>
+            <div
+              className="h-full rounded-full transition-[width] duration-700 ease-out"
+              style={{
+                width: `${pct}%`,
+                background: allDone && totalToday > 0 ? '#22c55e' : 'var(--color-brand-500)',
+              }}
+            />
+          </div>
+
+          {/* Bottom row: habits · tasks · overdue */}
+          <div className="flex items-center gap-3 mt-1.5">
+            <span className="font-sans text-[10px] font-bold uppercase tracking-[0.3px]" style={{ color: 'var(--text-tertiary)' }}>
+              Habits {doneHabits.length}/{todaysHabits.length}
+            </span>
+            <span className="w-px h-3 shrink-0" style={{ background: 'var(--border-subtle)' }} />
+            <span className="font-sans text-[10px] font-bold uppercase tracking-[0.3px]" style={{ color: 'var(--text-tertiary)' }}>
+              Tasks {doneTasks.length}/{doneTasks.length + pendingTasks.length}
+            </span>
+            {overdueTasks.length > 0 && (
+              <>
+                <span className="w-px h-3 shrink-0" style={{ background: 'var(--border-subtle)' }} />
+                <span className="font-sans text-[10px] font-bold uppercase tracking-[0.3px]" style={{ color: 'var(--color-overdue)' }}>
+                  {overdueTasks.length} overdue
+                </span>
+              </>
+            )}
+          </div>
+        </div>
       </div>
 
-      <div className="px-4 lg:px-6">
-        <div className="hero-panel rounded-[28px] px-4 py-4 lg:px-5">
+      {/* ── Desktop: hero panel ─────────────────────────────────────── */}
+      <div className="hidden lg:block px-6">
+        <div className="hero-panel rounded-[28px] px-5 py-4">
           <div className="flex items-start justify-between gap-4">
             <div>
               <div className="section-kicker mb-2">{world === 'personal' ? 'Personal flow' : 'Professional focus'}</div>
@@ -618,22 +754,14 @@ export default function Dashboard() {
                   : 'Keep the streak warm with one more completion.'}
               </p>
             </div>
-            <button
-              onClick={() => openCreateComposer('habit', world)}
-              className="lg:hidden flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-[var(--text-on-brand)]"
-              style={{ background: 'var(--color-brand-500)', boxShadow: 'var(--shadow-glow)' }}
-              aria-label="Add item"
-            >
-              <Plus size={20} strokeWidth={2.5} />
-            </button>
           </div>
         </div>
       </div>
 
       {/* ══════════════════════════════════════════════════════════════
-          STAT CARDS
+          STAT CARDS — desktop only
       ══════════════════════════════════════════════════════════════ */}
-      <div className="px-4 lg:px-6 pt-3 lg:pt-5 pb-4 grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="hidden lg:grid px-6 pt-5 pb-4 grid-cols-4 gap-3">
         <StatCard
           label={isViewingToday ? 'Today' : sectionLabel}
           value={
@@ -642,10 +770,7 @@ export default function Dashboard() {
             </>
           }
           sub={allDone && totalToday > 0 ? '🎉 All done!' : `${pct}% complete`}
-          gradient={allDone && totalToday > 0
-            ? '#1db954'
-            : 'var(--color-brand-500)'
-          }
+          gradient={allDone && totalToday > 0 ? '#1db954' : 'var(--color-brand-500)'}
           progress={pct}
         />
         <StatCard
@@ -786,15 +911,18 @@ export default function Dashboard() {
           {/* Empty state */}
           {pendingHabits.length === 0 && pendingTasks.length === 0 &&
            overdueTasks.length === 0 && doneHabits.length === 0 && doneTasks.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="text-[52px] mb-4">🌱</div>
-              <p className="font-sans font-bold text-[18px] text-[var(--text-primary)]">
-                {isViewingToday ? 'Nothing scheduled' : 'Nothing on this day'}
-              </p>
-              <p className="font-body text-[14px] text-[var(--text-secondary)] mt-2 max-w-[200px]">
-                {isViewingToday ? 'Tap + to add your first habit or task' : 'No habits or tasks for this date'}
-              </p>
-            </div>
+            <EmptyState
+              hero
+              emoji="🌱"
+              headline={isViewingToday ? 'Your journey starts here' : 'Nothing on this day'}
+              subheadline={
+                isViewingToday
+                  ? 'Build one habit at a time — small wins compound into big results.'
+                  : 'No habits or tasks were scheduled for this date.'
+              }
+              ideas={isViewingToday ? ['Morning stretch', 'Drink water', 'Read 20 min', 'Walk outside'] : undefined}
+              action={isViewingToday ? { label: '+ Add first habit', onClick: () => openCreateComposer('habit', world) } : undefined}
+            />
           )}
         </div>
 

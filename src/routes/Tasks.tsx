@@ -6,6 +6,7 @@ import { format, parseISO } from 'date-fns'
 import { tasksRepo } from '@/db/repos/tasks'
 import { tagsRepo } from '@/db/repos/tags'
 import { useAppStore } from '@/store/appStore'
+import { EmptyState } from '@/components/ui'
 import type { Task } from '@/types'
 
 const PRIORITY_COLOR: Record<string, string> = {
@@ -123,19 +124,45 @@ export default function Tasks() {
                   {upcoming.map(t => <TaskRow key={t.id} task={t} />)}
                 </>
               )}
-              {overdue.length === 0 && dueToday.length === 0 && upcoming.length === 0 && <EmptyState />}
+              {overdue.length === 0 && dueToday.length === 0 && upcoming.length === 0 && (
+                <div className="glass-panel rounded-[28px]">
+                  <EmptyState
+                    emoji="📋"
+                    headline="No pending tasks"
+                    subheadline="You're all caught up! Add a task to stay on top of your goals."
+                    action={{ label: '+ Add task', onClick: () => openCreateComposer('task') }}
+                  />
+                </div>
+              )}
             </>
           )}
           {tab === 'Done' && (
             <>
-              {done.length > 0 ? done.map(t => <TaskRow key={t.id} task={t} />) : <EmptyState />}
+              {done.length > 0 ? done.map(t => <TaskRow key={t.id} task={t} />) : (
+                <div className="glass-panel rounded-[28px]">
+                  <EmptyState
+                    emoji="✅"
+                    headline="Nothing completed yet"
+                    subheadline="Tasks you finish will show up here. Keep going!"
+                  />
+                </div>
+              )}
             </>
           )}
           {tab === 'All' && (
             <>
               {visibleTasks.length > 0
                 ? [...visibleTasks].sort((a, b) => a.dueDate.localeCompare(b.dueDate)).map(t => <TaskRow key={t.id} task={t} />)
-                : <EmptyState />}
+                : (
+                  <div className="glass-panel rounded-[28px]">
+                    <EmptyState
+                      emoji="🗂️"
+                      headline="No tasks yet"
+                      subheadline="One-off goals, deadlines, and errands — add anything here."
+                      action={{ label: '+ Create task', onClick: () => openCreateComposer('task') }}
+                    />
+                  </div>
+                )}
             </>
           )}
         </div>
@@ -178,15 +205,6 @@ function SectionLabel({ label, count, color }: { label: string; count: number; c
   )
 }
 
-function EmptyState() {
-  return (
-    <div className="glass-panel rounded-[28px] py-16 text-center">
-      <div className="mb-3 text-[40px]">✅</div>
-      <p className="font-sans text-[16px] font-bold text-[var(--text-primary)]">All clear</p>
-      <p className="mt-1 font-body text-[13px] text-[var(--text-secondary)]">No tasks here right now</p>
-    </div>
-  )
-}
 
 function TaskRow({ task }: { task: Task }) {
   const navigate = useNavigate()

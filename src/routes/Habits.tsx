@@ -8,6 +8,7 @@ import { tagsRepo } from '@/db/repos/tags'
 import { computeStreak, computeCompletionRate } from '@/lib/streaks'
 import { format } from 'date-fns'
 import { useAppStore } from '@/store/appStore'
+import { EmptyState } from '@/components/ui'
 
 export default function Habits() {
   const openCreateComposer = useAppStore(s => s.openCreateComposer)
@@ -95,10 +96,23 @@ export default function Habits() {
 
         <div className="mt-1 flex flex-col gap-3 px-4">
           {filtered.length === 0 && (
-            <div className="glass-panel rounded-[28px] py-16 text-center">
-              <div className="mb-3 text-[40px]">🌱</div>
-              <p className="font-sans text-[16px] font-bold text-[var(--text-primary)]">No habits yet</p>
-              <p className="mt-1 font-body text-[13px] text-[var(--text-secondary)]">Tap + to create your first habit</p>
+            <div className="glass-panel rounded-[28px]">
+              <EmptyState
+                hero
+                emoji={search || filterTag ? '🔍' : '✨'}
+                headline={search || filterTag ? 'No matching habits' : 'No habits yet'}
+                subheadline={
+                  search || filterTag
+                    ? 'Try a different search or clear your filters.'
+                    : 'Consistency is the key. Add your first habit and start building your streak today.'
+                }
+                ideas={!search && !filterTag ? ['Morning run', 'Meditate 10 min', 'Read daily', 'Drink 8 glasses'] : undefined}
+                action={
+                  !search && !filterTag
+                    ? { label: '+ Create first habit', onClick: () => openCreateComposer('habit') }
+                    : undefined
+                }
+              />
             </div>
           )}
           {filtered.map(h => (
