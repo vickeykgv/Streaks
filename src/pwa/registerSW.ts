@@ -19,3 +19,15 @@ export function initServiceWorker(onUpdateAvailable: () => void) {
 export function applyUpdate() {
   updateSWFn?.(true)
 }
+
+export async function requestBackgroundSync() {
+  try {
+    const reg = await navigator.serviceWorker.ready
+    if ('sync' in reg) {
+      await (reg as unknown as { sync: { register: (tag: string) => Promise<void> } })
+        .sync.register('habit-sync')
+    }
+  } catch {
+    // Background Sync not supported in this browser — ok
+  }
+}

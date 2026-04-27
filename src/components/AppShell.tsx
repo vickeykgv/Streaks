@@ -6,6 +6,8 @@ import { InstallPrompt } from '@/components/InstallPrompt'
 import { BottomSheet, Modal } from '@/components/ui'
 import Editor from '@/routes/Editor'
 import { useAppStore } from '@/store/appStore'
+import { useSession } from '@/auth/session'
+import { syncNow } from '@/sync/engine'
 
 interface AppShellProps {
   children: ReactNode
@@ -18,9 +20,13 @@ export function AppShell({ children }: AppShellProps) {
   const [isDesktop, setIsDesktop] = useState(() =>
     typeof window !== 'undefined' ? window.matchMedia('(min-width: 1024px)').matches : false,
   )
+  const { user } = useSession()
 
   useEffect(() => {
-    const onOnline  = () => useAppStore.getState().setOnline(true)
+    const onOnline = () => {
+      useAppStore.getState().setOnline(true)
+      if (useSession.getState().user) syncNow()
+    }
     const onOffline = () => useAppStore.getState().setOnline(false)
     window.addEventListener('online',  onOnline)
     window.addEventListener('offline', onOffline)
@@ -28,6 +34,23 @@ export function AppShell({ children }: AppShellProps) {
       window.removeEventListener('online',  onOnline)
       window.removeEventListener('offline', onOffline)
     }
+  }, [])
+
+  // Sync on sign-in and every 60 seconds while signed in
+  useEffect(() => {
+    if (!user) return
+    syncNow()
+    const id = setInterval(syncNow, 60_000)
+    return () => clearInterval(id)
+  }, [user])
+
+  // Listen for background sync messages from the service worker
+  useEffect(() => {
+    const handler = (event: MessageEvent) => {
+      if (event.data?.type === 'SYNC_NOW') syncNow()
+    }
+    navigator.serviceWorker?.addEventListener('message', handler)
+    return () => navigator.serviceWorker?.removeEventListener('message', handler)
   }, [])
 
   useEffect(() => {

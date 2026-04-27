@@ -16,6 +16,10 @@ import { IconPicker } from '@/components/IconPicker'
 import { TagInput } from '@/components/TagInput'
 import { RecurrencePicker } from '@/components/RecurrencePicker'
 import { MeasurementConfig } from '@/components/MeasurementConfig'
+import { useSession } from '@/auth/session'
+import { subscribeToPush } from '@/push/subscribe'
+import { reminderApi } from '@/push/api'
+import { ReminderPermissionPrompt } from '@/components/ReminderPermissionPrompt'
 
 type Mode = 'habit' | 'task'
 
@@ -61,8 +65,10 @@ export default function Editor({
     ? (type as Mode)
     : ((searchParams.get('type') as Mode) ?? 'habit'))
 
+  const { user } = useSession()
   const [mode, setMode] = useState<Mode>(initialMode)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showIOSPrompt, setShowIOSPrompt] = useState(false)
   const [loading, setLoading] = useState(isEdit)
   const [showAdvanced, setShowAdvanced] = useState(false)
 
@@ -164,12 +170,47 @@ export default function Editor({
       archived: false,
     } as Omit<Habit, 'id' | 'createdAt' | 'updatedAt' | 'dirty' | 'syncedAt' | 'deletedAt'>
 
+    let savedId: string
     if (isEdit) {
       await habitsRepo.update(id!, payload)
+      savedId = id!
       toast.success('Habit updated')
     } else {
-      await habitsRepo.create(payload)
+      const habit = await habitsRepo.create(payload)
+      savedId = habit.id
       toast.success('Habit created')
+    }
+
+    if (data.reminderTime && user) {
+      const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent)
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+
+      if (isIOS && !isStandalone) {
+        setShowIOSPrompt(true)
+        return
+      }
+
+      try {
+        const sub = await subscribeToPush()
+        if (sub) {
+          const daysOfWeek = data.recurrence.type === 'daily'
+            ? [0, 1, 2, 3, 4, 5, 6]
+            : (data.recurrence.daysOfWeek ?? [0, 1, 2, 3, 4, 5, 6])
+          await reminderApi.set({
+            entityType: 'habit',
+            entityId: savedId,
+            localTime: data.reminderTime,
+            daysOfWeek,
+          })
+        }
+      } catch {
+        // push failure is non-critical
+      }
+    } else if (!data.reminderTime) {
+      // If reminder was cleared, cancel any existing reminder
+      if (user && (isEdit)) {
+        reminderApi.cancel(id!).catch(() => null)
+      }
     }
 
     finish()
@@ -257,6 +298,7 @@ export default function Editor({
   }
 
   return (
+    <>
     <div className="min-h-screen bg-app pb-24">
       <div className="mx-auto max-w-2xl">
         <div className="flex items-center gap-3 px-4 pb-2 pt-4">
@@ -331,6 +373,11 @@ export default function Editor({
         />
       </div>
     </div>
+
+    {showIOSPrompt && (
+      <ReminderPermissionPrompt onDismiss={() => { setShowIOSPrompt(false); finish() }} />
+    )}
+    </>
   )
 }
 

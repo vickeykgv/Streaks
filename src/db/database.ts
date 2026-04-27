@@ -28,6 +28,15 @@ export class HabitTrackerDB extends Dexie {
         tx.table('tasks').toCollection().modify((t: Record<string, unknown>) => { t['world'] ??= 'personal' }),
       ])
     )
+
+    this.version(3).stores({
+      tags: 'id, name, updatedAt, dirty',
+    }).upgrade(tx =>
+      tx.table('tags').toCollection().modify((tag: Record<string, unknown>) => {
+        tag['updatedAt'] ??= Date.now()
+        tag['dirty'] = true
+      })
+    )
   }
 }
 

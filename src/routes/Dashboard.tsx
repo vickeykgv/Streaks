@@ -15,6 +15,7 @@ import { isEntryComplete } from '@/lib/measurement'
 import { copy } from '@/lib/copy'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store/appStore'
+import { SyncStatusBadge } from '@/components/SyncStatusBadge'
 import type { Habit, HabitEntry, Task, World } from '@/types'
 
 // ─── Stat card ────────────────────────────────────────────────────────────────
@@ -647,6 +648,9 @@ export default function Dashboard() {
           <div className="hidden lg:flex shrink-0">
             <WorldSwitcher world={world} onChange={switchWorld} />
           </div>
+
+          {/* Sync status */}
+          <SyncStatusBadge />
 
           {/* Bell */}
           <button

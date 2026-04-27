@@ -5,6 +5,8 @@ import App from './App.tsx'
 import { initTheme } from './lib/theme'
 import { initServiceWorker } from '@/pwa/registerSW'
 import { useAppStore } from '@/store/appStore'
+import { authClient } from '@/auth/client'
+import { useSession } from '@/auth/session'
 
 initTheme()
 
@@ -14,6 +16,18 @@ if (import.meta.env.DEV) {
 
 initServiceWorker(() => {
   useAppStore.getState().setUpdateAvailable(true)
+})
+
+// Restore session on startup
+authClient.getUser().then(user => {
+  useSession.getState().setUser(user)
+  useSession.getState().setLoading(false)
+})
+
+// React to auth state changes (e.g. magic link redirect)
+authClient.onAuthStateChange(user => {
+  useSession.getState().setUser(user)
+  useSession.getState().setLoading(false)
 })
 
 createRoot(document.getElementById('root')!).render(

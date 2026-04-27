@@ -1,5 +1,6 @@
 import { db } from '@/db/database'
 import type { HabitEntry } from '@/types'
+import { scheduleSyncSoon } from '@/sync/schedule'
 
 const now = () => Date.now()
 
@@ -36,6 +37,7 @@ export const entriesRepo = {
         ...patch,
       } as HabitEntry)
     }
+    scheduleSyncSoon()
     return db.habitEntries.get(id)
   },
 }

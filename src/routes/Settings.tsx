@@ -1,9 +1,13 @@
-import { useState, useEffect } from 'react'
-import { Moon, Sun, Monitor, Download, Upload, Trash2, ChevronRight } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Moon, Sun, Monitor, Download, Upload, Trash2, ChevronRight, LogIn, LogOut, User, Bell } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { setTheme, type Theme } from '@/lib/theme'
 import { settingsRepo } from '@/db/repos/settings'
 import { db } from '@/db/database'
 import { toast } from '@/store/toastStore'
+import { authClient } from '@/auth/client'
+import { useSession } from '@/auth/session'
+import { downloadExport, importAll } from '@/lib/exportImport'
 
 function SettingRow({ icon, label, description, right, onClick }: {
   icon: React.ReactNode
@@ -42,11 +46,42 @@ export default function Settings() {
   const [theme, setThemeState] = useState<Theme>('system')
   const [weekStart, setWeekStartState] = useState<0 | 1>(1)
   const [showClearConfirm, setShowClearConfirm] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false)
+  const [dirtyCount, setDirtyCount] = useState(0)
+  const [quietEnabled, setQuietEnabled] = useState(false)
+  const [quietFrom, setQuietFrom] = useState('22:00')
+  const [quietTo, setQuietTo] = useState('08:00')
+  const { user } = useSession()
 
   useEffect(() => {
     settingsRepo.get<Theme>('theme', 'dark').then(v => setThemeState(v))
     settingsRepo.get<0 | 1>('weekStart', 1).then(v => setWeekStartState(v))
+    settingsRepo.get<{ enabled: boolean; from: string; to: string }>(
+      'quietHours',
+      { enabled: false, from: '22:00', to: '08:00' },
+    ).then(v => {
+      setQuietEnabled(v.enabled)
+      setQuietFrom(v.from)
+      setQuietTo(v.to)
+    })
   }, [])
+
+  useEffect(() => {
+    if (!user) return
+    Promise.all([
+      db.habits.where('dirty').equals(1).count(),
+      db.tasks.where('dirty').equals(1).count(),
+      db.habitEntries.where('dirty').equals(1).count(),
+    ]).then(([h, t, e]) => setDirtyCount(h + t + e)).catch(() => {
+      // dirty is stored as boolean; fall back to a full scan
+      Promise.all([
+        db.habits.filter(r => !!r.dirty).count(),
+        db.tasks.filter(r => !!r.dirty).count(),
+        db.habitEntries.filter(r => !!r.dirty).count(),
+      ]).then(([h, t, e]) => setDirtyCount(h + t + e))
+    })
+  }, [user])
 
   const handleTheme = async (t: Theme) => {
     setThemeState(t)
@@ -72,12 +107,45 @@ export default function Settings() {
     toast.success('All data cleared')
   }
 
-  const handleExport = () => {
-    toast.info('Export coming in a future update')
+  const handleExport = async () => {
+    try {
+      await downloadExport()
+      toast.success('Backup downloaded')
+    } catch {
+      toast.error('Export failed')
+    }
   }
 
   const handleImport = () => {
-    toast.info('Import coming in a future update')
+    fileInputRef.current?.click()
+  }
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    try {
+      const text = await file.text()
+      const { imported } = await importAll(text)
+      toast.success(`Imported ${imported} records`)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Import failed')
+    } finally {
+      e.target.value = ''
+    }
+  }
+
+  const handleSignOut = async () => {
+    await authClient.signOut()
+    setShowSignOutConfirm(false)
+    toast.success('Signed out')
+  }
+
+  const handleDeleteAccount = () => {
+    toast.info('Contact support to delete your account')
+  }
+
+  const saveQuietHours = async (enabled: boolean, from: string, to: string) => {
+    await settingsRepo.set('quietHours', { enabled, from, to })
   }
 
   const THEMES: { id: Theme; label: string; Icon: typeof Sun }[] = [
@@ -87,6 +155,7 @@ export default function Settings() {
   ]
 
   return (
+    <>
     <div className="min-h-screen bg-app pb-28">
       <div className="mx-auto max-w-3xl px-4 pt-4">
         <div className="hero-panel rounded-[30px] px-5 py-5">
@@ -170,6 +239,110 @@ export default function Settings() {
             />
           </SectionCard>
 
+          <SectionCard title="Account">
+            {user ? (
+              <>
+                <SettingRow
+                  icon={<User size={16} />}
+                  label="Signed in as"
+                  description={user.email}
+                  right={<span />}
+                />
+                <SettingRow
+                  icon={<LogOut size={16} />}
+                  label="Sign out"
+                  onClick={() => {
+                    if (dirtyCount > 0) {
+                      setShowSignOutConfirm(true)
+                    } else {
+                      handleSignOut()
+                    }
+                  }}
+                />
+                <SettingRow
+                  icon={<Trash2 size={16} />}
+                  label="Delete account"
+                  description="Removes all server data"
+                  onClick={handleDeleteAccount}
+                />
+              </>
+            ) : (
+              <div className="px-4 py-4">
+                <p className="mb-3 font-body text-[13px] text-[var(--text-secondary)]">
+                  Signing in enables sync across devices.
+                </p>
+                <Link
+                  to="/signin?return=/settings"
+                  className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl font-sans text-[14px] font-bold text-[var(--text-on-brand)]"
+                  style={{ background: 'var(--color-brand-500)', boxShadow: 'var(--shadow-glow)' }}
+                >
+                  <LogIn size={15} />
+                  Sign in / Create account
+                </Link>
+              </div>
+            )}
+          </SectionCard>
+
+          <SectionCard title="Notifications">
+            <div className="px-4 py-4">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[var(--bg-surface-2)] text-[var(--text-secondary)]">
+                    <Bell size={16} />
+                  </div>
+                  <div>
+                    <div className="font-sans text-[14px] font-semibold text-[var(--text-primary)]">Quiet hours</div>
+                    <div className="font-body text-[12px] text-[var(--text-tertiary)]">Silence reminders during sleep</div>
+                  </div>
+                </div>
+                <button
+                  onClick={async () => {
+                    const next = !quietEnabled
+                    setQuietEnabled(next)
+                    await saveQuietHours(next, quietFrom, quietTo)
+                  }}
+                  className="relative h-6 w-11 rounded-full transition-colors"
+                  style={{ background: quietEnabled ? 'var(--color-brand-500)' : 'var(--bg-surface-2)' }}
+                  aria-label="Toggle quiet hours"
+                >
+                  <span
+                    className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform"
+                    style={{ transform: quietEnabled ? 'translateX(20px)' : 'translateX(2px)' }}
+                  />
+                </button>
+              </div>
+
+              {quietEnabled && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1 block font-sans text-[11px] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">From</label>
+                    <input
+                      type="time"
+                      value={quietFrom}
+                      onChange={async e => {
+                        setQuietFrom(e.target.value)
+                        await saveQuietHours(quietEnabled, e.target.value, quietTo)
+                      }}
+                      className="h-10 w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface-2)] px-3 font-sans text-[14px] text-[var(--text-primary)] outline-none focus:border-[var(--color-brand-500)]"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block font-sans text-[11px] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">To</label>
+                    <input
+                      type="time"
+                      value={quietTo}
+                      onChange={async e => {
+                        setQuietTo(e.target.value)
+                        await saveQuietHours(quietEnabled, quietFrom, e.target.value)
+                      }}
+                      className="h-10 w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface-2)] px-3 font-sans text-[14px] text-[var(--text-primary)] outline-none focus:border-[var(--color-brand-500)]"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </SectionCard>
+
           <SectionCard title="About">
             <SettingRow
               icon={<span className="text-[16px]">📱</span>}
@@ -204,7 +377,42 @@ export default function Settings() {
             </div>
           </div>
         )}
+
+        {showSignOutConfirm && (
+          <div className="fixed inset-0 z-50 flex items-end bg-[var(--bg-overlay)] px-3 pb-3 pt-12" onClick={() => setShowSignOutConfirm(false)}>
+            <div className="glass-panel w-full rounded-[30px] p-5" onClick={e => e.stopPropagation()}>
+              <p className="font-sans text-[18px] font-bold text-[var(--text-primary)]">Sign out?</p>
+              <p className="mt-2 font-body text-[14px] text-[var(--text-secondary)]">
+                You have {dirtyCount} unsynced change{dirtyCount !== 1 ? 's' : ''}. Sign out anyway?
+                Your local data will be kept.
+              </p>
+              <div className="mt-4 flex flex-col gap-2">
+                <button
+                  onClick={handleSignOut}
+                  className="h-12 w-full rounded-2xl font-sans text-[14px] font-extrabold text-[var(--text-on-danger)]"
+                  style={{ background: 'var(--color-overdue)' }}
+                >
+                  Sign out anyway
+                </button>
+                <button
+                  onClick={() => setShowSignOutConfirm(false)}
+                  className="h-12 w-full rounded-2xl bg-[var(--bg-surface-2)] font-sans text-[14px] font-bold text-[var(--text-secondary)]"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
+    <input
+      ref={fileInputRef}
+      type="file"
+      accept=".json"
+      className="sr-only"
+      onChange={handleImportFile}
+    />
+    </>
   )
 }
