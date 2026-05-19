@@ -9,6 +9,7 @@ import { authClient } from '@/auth/client'
 import { useSession } from '@/auth/session'
 import { downloadExport, importAll } from '@/lib/exportImport'
 import { TimePicker } from '@/components/ui'
+import { isAppBadgeSupported } from '@/lib/appBadge'
 
 function SettingRow({ icon, label, description, right, onClick }: {
   icon: React.ReactNode
@@ -338,6 +339,32 @@ export default function Settings() {
                 </div>
               )}
             </div>
+          </SectionCard>
+
+          <SectionCard title="Home screen">
+            <SettingRow
+              icon={<span className="text-[16px]">🔴</span>}
+              label="App icon badge"
+              description={isAppBadgeSupported()
+                ? 'A red badge shows the count of items pending today.'
+                : 'Install the app to your home screen to see a pending-count badge on the icon.'}
+              right={
+                <span
+                  className="font-sans text-[11px] font-bold uppercase tracking-wide px-2 py-1 rounded-full"
+                  style={{
+                    background: isAppBadgeSupported() ? 'rgba(34,197,94,0.14)' : 'var(--bg-surface-2)',
+                    color: isAppBadgeSupported() ? 'var(--color-done)' : 'var(--text-tertiary)',
+                  }}
+                >
+                  {isAppBadgeSupported() ? 'Active' : 'Unavailable'}
+                </span>
+              }
+            />
+            <SettingRow
+              icon={<span className="text-[16px]">⚡</span>}
+              label="Home-screen shortcuts"
+              description="Long-press the installed app icon for Today, Add Habit, and Add Task shortcuts."
+            />
           </SectionCard>
 
           <SectionCard title="About">

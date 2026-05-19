@@ -5,6 +5,7 @@ import { ToastContainer } from '@/components/ui'
 import { ErrorBoundary }  from '@/components/ErrorBoundary'
 import { Onboarding }     from '@/components/Onboarding'
 import { settingsRepo }   from '@/db/repos/settings'
+import { useAppBadge }    from '@/hooks/useAppBadge'
 import Dashboard   from '@/routes/Dashboard'
 import Habits      from '@/routes/Habits'
 import HabitDetail from '@/routes/HabitDetail'
@@ -28,6 +29,7 @@ function RouteLoader() {
 export default function App() {
   const [ready, setReady] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
+  useAppBadge()
 
   useEffect(() => {
     settingsRepo.get<boolean>('onboardingDone', false).then(done => {

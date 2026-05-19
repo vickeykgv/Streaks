@@ -4,19 +4,28 @@ A prioritized backlog of improvements for the Habit Tracker PWA — high-impact 
 
 ---
 
+## ✅ Completed
+
+- **Undo toast after destructive actions.** Toast store extended to support an inline action button; `tasksRepo.restore()` and `habitsRepo.restore()` clear the tombstone. Delete via 3-dot menu or swipe-left now shows "Deleted X · UNDO" for 5s. Replaces the old confirm dialog.
+- **Swipe gestures on rows.** Touch-drag right to complete, left to delete. Axis-locked on first 8px so vertical scrolling still works; damped translate up to 140px; springs back below 80px threshold. Colored backdrops (green/red) fade in proportionally as the user drags.
+- **Tap row to expand inline.** Row body click toggles an expansion panel with a note textarea (saves to today's `HabitEntry.note` for habits, `Task.description` for tasks), View/Edit shortcuts, and Snooze-1-day for tasks. Completion is now via the explicit checkbox button or swipe-right (no more accidental completes from tapping the row).
+- **Empty-state for "All done!"** Green→indigo gradient banner with an animated party-popper appears above the Today list when `doneToday === totalToday`. Subline references the current best streak.
+- **Completion burst animation.** Tapping the checkbox triggers a 480ms in-place celebration: ring-burst, check-pop, four colored confetti dots, row breathe, green glow shadow. Real DB write deferred until animation plays so the user sees the win before the row reorders.
+- **Tasks carry forward + overdue highlight.** Pending tasks now appear on Today every day until done; rows past their due date get a red-tinted background, border, and an "Overdue · due MMM d" chip. Removed the separate collapsible Overdue alert section (redundant).
+- **Themed Select / DatePicker / TimePicker.** Replaced all native `<select>`, `<input type="date">`, and `<input type="time">` in Editor and Settings with Radix-based themed components matching the design system (portaled popovers, brand-glow selected state, zoom-in animation, scrollable hour/minute columns, Today/Clear footer actions).
+- **ConfirmDialog event-bubbling fix.** Stopped `onClick`/`onPointerDown` propagation on `Dialog.Content` so confirm clicks no longer leak through the React portal tree to ancestor row handlers.
+
+---
+
 ## Quick wins (a day or less each)
 
 - **Haptic + sound on completion.** `navigator.vibrate(15)` on mark-complete and a tiny "pop" sound (toggleable). The visual burst feels twice as good with a 15ms buzz. Free dopamine.
-- **Undo toast after destructive actions.** When deleting or completing a task via the row swipe/menu, show a toast with an "Undo" button for 4s before committing. Lowers anxiety about taps.
-- **Swipe gestures on rows.** Right-swipe to complete, left-swipe to delete (with confirm). Standard mobile pattern; people expect it on a PWA.
-- **Empty-state for "All done!".** When `doneToday === totalToday` and > 0, show a celebratory state in the Today list (not just the percent chip). It's a wasted moment of joy right now.
-- **Tap row to expand inline** instead of jumping to the detail page for quick edits (notes, snooze, reschedule). Detail page is overkill for "I want to add a note about today."
 
 ---
 
 ## Engagement features (a few days each)
 
-- **Snooze / reschedule a task** to tomorrow / next week / pick-a-date. Right now an overdue task just sits there — letting users defer is huge for not feeling defeated.
+- **Snooze / reschedule a task** — picker for tomorrow / next week / pick-a-date. (Snooze-1-day is done; this would extend it with multiple options.)
 - **Skip-with-reason for habits.** "Sick day", "rest day" — counts as a non-break in the streak. Streaks that punish illness are streaks people abandon.
 - **Weekly review screen.** Sunday-evening recap: streaks held, top habit, missed days, suggestion for the coming week. Becomes a reason to open the app.
 - **Habit grouping / "routines".** "Morning routine" = 4 habits the user marks done together. One tap completes the group.
@@ -53,14 +62,14 @@ A prioritized backlog of improvements for the Habit Tracker PWA — high-impact 
 ## Quality-of-code (invisible to users but matters)
 
 - **E2E tests with Playwright** for the critical paths: create habit → complete → see streak. We have unit tests but no integration.
-- **Bundle analyzer pass.** Lucide icons especially — make sure tree-shaking is working. Easy 50–100kb win on initial load.
+- **Bundle analyzer pass.** The main bundle is 252 kB gzipped — Lucide icons especially are worth a tree-shake check. Easy 50–100 kB win on initial load.
 
 ---
 
 ## Recommended next three
 
-If picking only three to do next:
+With swipe gestures, undo toast, all-done state, and inline expand now shipped, the next high-impact set is:
 
-1. **Swipe gestures + undo toast** — interaction feel.
-2. **Snooze / skip-with-reason** — kindness toward the user.
-3. **Year heatmap on habit detail** — the feature people will screenshot and share.
+1. **Year heatmap on habit detail** — the feature people screenshot and share.
+2. **Skip-with-reason for habits** — protects streaks; big retention win.
+3. **Haptic + sound feedback on completion** — small effort, huge feel upgrade on top of the existing burst animation.
