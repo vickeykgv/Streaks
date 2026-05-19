@@ -512,7 +512,7 @@ function TodayRow({ item, onTap, todayStr }: {
         position: 'relative',
         transform: `translateX(${dragX}px)`,
         transition: dragging ? 'none' : 'transform 220ms var(--ease-spring), background 300ms, border-color 300ms, box-shadow 300ms',
-        touchAction: 'pan-y',
+        touchAction: 'pan-y manipulation',
       }}
       onClick={() => { if (suppressClick.current) return; triggerComplete() }}
       onKeyDown={e => e.key === 'Enter' && triggerComplete()}

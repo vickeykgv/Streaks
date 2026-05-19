@@ -4,14 +4,24 @@ let updateSWFn: ((reloadPage?: boolean) => Promise<void>) | undefined
 
 export function initServiceWorker(onUpdateAvailable: () => void) {
   updateSWFn = registerSW({
+    immediate: true,
     onNeedRefresh() {
+      // With autoUpdate, vite-pwa skips this — kept for safety if mode changes.
       onUpdateAvailable()
     },
     onOfflineReady() {
       console.log('[SW] App ready to work offline')
     },
     onRegisteredSW(_swUrl, registration) {
-      setInterval(() => registration?.update(), 60 * 60 * 1000)
+      if (!registration) return
+      // Check for updates on a short interval AND when the PWA regains focus
+      // (covers Android standalone where the app may be backgrounded for hours).
+      const check = () => { void registration.update() }
+      setInterval(check, 15 * 60 * 1000)
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') check()
+      })
+      window.addEventListener('focus', check)
     },
   })
 }
