@@ -16,8 +16,14 @@ export function initServiceWorker(onUpdateAvailable: () => void) {
   })
 }
 
-export function applyUpdate() {
-  updateSWFn?.(true)
+export async function applyUpdate() {
+  if (!updateSWFn) {
+    window.location.reload()
+    return false
+  }
+
+  await updateSWFn(true)
+  return true
 }
 
 export async function requestBackgroundSync() {

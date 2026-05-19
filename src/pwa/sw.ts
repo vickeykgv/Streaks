@@ -4,12 +4,20 @@ import { registerRoute, NavigationRoute } from 'workbox-routing'
 import { createHandlerBoundToURL } from 'workbox-precaching'
 import { CacheFirst, StaleWhileRevalidate } from 'workbox-strategies'
 import { ExpirationPlugin } from 'workbox-expiration'
+import { clientsClaim } from 'workbox-core'
 
 declare const self: ServiceWorkerGlobalScope & typeof globalThis
 
 // ─── Precache ──────────────────────────────────────────────────────────────
 precacheAndRoute(self.__WB_MANIFEST)
 cleanupOutdatedCaches()
+clientsClaim()
+
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') {
+    void self.skipWaiting()
+  }
+})
 
 // ─── SPA fallback ──────────────────────────────────────────────────────────
 registerRoute(
