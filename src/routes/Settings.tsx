@@ -8,6 +8,7 @@ import { toast } from '@/store/toastStore'
 import { authClient } from '@/auth/client'
 import { useSession } from '@/auth/session'
 import { downloadExport, importAll } from '@/lib/exportImport'
+import { TimePicker } from '@/components/ui'
 
 function SettingRow({ icon, label, description, right, onClick }: {
   icon: React.ReactNode
@@ -316,26 +317,22 @@ export default function Settings() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="mb-1 block font-sans text-[11px] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">From</label>
-                    <input
-                      type="time"
+                    <TimePicker
                       value={quietFrom}
-                      onChange={async e => {
-                        setQuietFrom(e.target.value)
-                        await saveQuietHours(quietEnabled, e.target.value, quietTo)
+                      onChange={async (v) => {
+                        setQuietFrom(v)
+                        await saveQuietHours(quietEnabled, v, quietTo)
                       }}
-                      className="h-10 w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface-2)] px-3 font-sans text-[14px] text-[var(--text-primary)] outline-none focus:border-[var(--color-brand-500)]"
                     />
                   </div>
                   <div>
                     <label className="mb-1 block font-sans text-[11px] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">To</label>
-                    <input
-                      type="time"
+                    <TimePicker
                       value={quietTo}
-                      onChange={async e => {
-                        setQuietTo(e.target.value)
-                        await saveQuietHours(quietEnabled, quietFrom, e.target.value)
+                      onChange={async (v) => {
+                        setQuietTo(v)
+                        await saveQuietHours(quietEnabled, quietFrom, v)
                       }}
-                      className="h-10 w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface-2)] px-3 font-sans text-[14px] text-[var(--text-primary)] outline-none focus:border-[var(--color-brand-500)]"
                     />
                   </div>
                 </div>

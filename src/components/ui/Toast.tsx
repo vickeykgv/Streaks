@@ -42,6 +42,14 @@ export function ToastContainer() {
             <span className="font-sans text-[12px] font-semibold text-white flex-1 leading-tight">
               {t.message}
             </span>
+            {t.action && (
+              <button
+                onClick={() => { t.action!.onClick(); dismiss(t.id) }}
+                className="font-sans text-[12px] font-extrabold text-white uppercase tracking-wide px-2 py-1 rounded-md hover:bg-white/15 transition-colors shrink-0"
+              >
+                {t.action.label}
+              </button>
+            )}
             <button
               onClick={() => dismiss(t.id)}
               className="text-white/50 hover:text-white transition-colors shrink-0 ml-1"

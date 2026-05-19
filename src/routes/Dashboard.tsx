@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Bell, Plus, AlertCircle, Search, Briefcase, Home, ChevronDown, Check, MoreVertical, Eye, Pencil, Trash2, Sparkles } from 'lucide-react'
-import { EmptyState, ConfirmDialog } from '@/components/ui'
+import { Bell, Plus, Search, Briefcase, Home, Check, MoreVertical, Eye, Pencil, Trash2, Sparkles, PartyPopper, Clock, X as XIcon } from 'lucide-react'
+import { EmptyState } from '@/components/ui'
 import { toast } from '@/store/toastStore'
 import { format, parseISO, subDays, addDays } from 'date-fns'
 import { useDashboard } from '@/hooks/useDashboard'
@@ -327,11 +327,26 @@ type TodayItem =
   | { kind: 'habit'; habit: Habit; entry: HabitEntry | undefined; sortKey: string }
   | { kind: 'task'; task: Task; sortKey: string }
 
-function TodayRow({ item, onTap }: { item: TodayItem; onTap: (item: TodayItem) => void }) {
+const SWIPE_THRESHOLD = 80
+const SWIPE_MAX = 140
+
+function TodayRow({ item, onTap, todayStr, selectedDate }: {
+  item: TodayItem
+  onTap: (item: TodayItem) => void
+  todayStr: string
+  selectedDate: string
+}) {
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
-  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [celebrating, setCelebrating] = useState(false)
+  const [expanded, setExpanded] = useState(false)
+  const [dragX, setDragX] = useState(0)
+  const [dragging, setDragging] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  const startX = useRef(0)
+  const startY = useRef(0)
+  const axisLocked = useRef<'x' | 'y' | null>(null)
+  const suppressClick = useRef(false)
 
   useEffect(() => {
     if (!menuOpen) return
@@ -350,52 +365,232 @@ function TodayRow({ item, onTap }: { item: TodayItem; onTap: (item: TodayItem) =
   const done  = isHabit
     ? isEntryComplete(item.entry, item.habit)
     : item.task.status === 'done'
+  const displayDone = done || celebrating
+  const isOverdue = !isHabit && !displayDone && item.task.dueDate < todayStr
+  const willCompleteCheckbox = !done && (isHabit
+    ? item.habit.measurementType === 'checkbox'
+    : item.task.measurementType === 'checkbox')
+
+  // Local note state for inline editing
+  const initialNote = isHabit ? (item.entry?.note ?? '') : (item.task.description ?? '')
+  const [note, setNote] = useState(initialNote)
+  useEffect(() => { setNote(initialNote) }, [initialNote])
+
+  const saveNote = async () => {
+    if (note === initialNote) return
+    if (isHabit) {
+      await entriesRepo.upsert(item.habit.id, selectedDate, { note: note || undefined })
+    } else {
+      await tasksRepo.update(item.task.id, { description: note || undefined })
+    }
+  }
+
+  const triggerComplete = () => {
+    if (celebrating) return
+    if (willCompleteCheckbox) {
+      setCelebrating(true)
+      window.setTimeout(() => {
+        onTap(item)
+        setCelebrating(false)
+      }, 480)
+      return
+    }
+    onTap(item)
+  }
 
   const handleView   = () => { setMenuOpen(false); navigate(isHabit ? `/habits/${id}` : `/tasks/${id}`) }
   const handleEdit   = () => { setMenuOpen(false); navigate(`/edit/${isHabit ? 'habit' : 'task'}/${id}`) }
+
   const handleDelete = async () => {
+    setMenuOpen(false)
+    setExpanded(false)
     if (isHabit) await habitsRepo.delete(id)
     else await tasksRepo.delete(id)
-    toast.success(`"${title}" deleted`)
+    toast.success(`"${title}" deleted`, {
+      label: 'Undo',
+      onClick: async () => {
+        if (isHabit) await habitsRepo.restore(id)
+        else await tasksRepo.restore(id)
+      },
+    })
   }
+
+  const handleSnooze = async () => {
+    if (isHabit) return
+    await tasksRepo.snooze(item.task.id, 1)
+    toast.success(`"${title}" snoozed to tomorrow`)
+    setExpanded(false)
+  }
+
+  // Swipe handlers
+  const onTouchStart = (e: React.TouchEvent) => {
+    if (expanded || celebrating) return
+    startX.current = e.touches[0].clientX
+    startY.current = e.touches[0].clientY
+    axisLocked.current = null
+    setDragging(true)
+  }
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (!dragging) return
+    const dx = e.touches[0].clientX - startX.current
+    const dy = e.touches[0].clientY - startY.current
+    if (!axisLocked.current) {
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return
+      axisLocked.current = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y'
+    }
+    if (axisLocked.current !== 'x') return
+    // Damp at the edges
+    const clamped = Math.max(-SWIPE_MAX, Math.min(SWIPE_MAX, dx))
+    setDragX(clamped)
+  }
+
+  const onTouchEnd = () => {
+    if (!dragging) return
+    setDragging(false)
+    const dx = dragX
+    setDragX(0)
+    if (axisLocked.current === 'x') {
+      // any horizontal motion → swallow the synthetic click that follows touchend
+      suppressClick.current = true
+      window.setTimeout(() => { suppressClick.current = false }, 350)
+    }
+    if (axisLocked.current !== 'x') return
+    if (dx >= SWIPE_THRESHOLD) {
+      triggerComplete()
+    } else if (dx <= -SWIPE_THRESHOLD) {
+      handleDelete()
+    }
+  }
+
+  // Reveal action backdrop direction
+  const revealRight = dragX > 0   // user dragged right, reveals left (complete) hint
+  const revealLeft  = dragX < 0   // user dragged left, reveals right (delete) hint
+  const revealStrength = Math.min(1, Math.abs(dragX) / SWIPE_THRESHOLD)
 
   return (
     <div
+      className="relative rounded-[24px]"
+      style={{ position: 'relative', zIndex: menuOpen || celebrating ? 10 : undefined }}
+    >
+      {/* Swipe action backdrops */}
+      {(revealRight || revealLeft) && (
+        <div className="absolute inset-0 rounded-[24px] flex items-stretch overflow-hidden pointer-events-none">
+          <div
+            className="flex-1 flex items-center pl-5 font-sans font-extrabold text-[13px] uppercase tracking-wide text-white"
+            style={{
+              background: 'linear-gradient(90deg, #16a34a 0%, #22c55e 100%)',
+              opacity: revealRight ? revealStrength : 0,
+            }}
+          >
+            <Check size={16} strokeWidth={3} className="mr-1.5" /> {done ? 'Undo' : 'Complete'}
+          </div>
+          <div
+            className="flex-1 flex items-center justify-end pr-5 font-sans font-extrabold text-[13px] uppercase tracking-wide text-white"
+            style={{
+              background: 'linear-gradient(90deg, #ef4444 0%, #b91c1c 100%)',
+              opacity: revealLeft ? revealStrength : 0,
+            }}
+          >
+            Delete <Trash2 size={15} strokeWidth={2.5} className="ml-1.5" />
+          </div>
+        </div>
+      )}
+
+    <div
       role="button"
       tabIndex={0}
-      className="glass-panel flex items-center gap-3 px-3.5 py-3.5 rounded-[24px] cursor-pointer active:scale-[0.99] transition-transform select-none"
+      className={cn(
+        'glass-panel flex items-center gap-3 px-3.5 py-3.5 rounded-[24px] cursor-pointer active:scale-[0.99] select-none',
+        'transition-[background,border-color,box-shadow] duration-300 ease-out',
+        celebrating && 'animate-row-celebrate',
+      )}
       style={{
-        background: done ? 'var(--color-done-bg)' : 'var(--bg-surface)',
-        border: done ? '1px solid #22c55e28' : '1px solid var(--border-subtle)',
+        background: displayDone
+          ? 'var(--color-done-bg)'
+          : isOverdue
+          ? 'var(--color-overdue-bg)'
+          : 'var(--bg-surface)',
+        border: displayDone
+          ? '1px solid #22c55e55'
+          : isOverdue
+          ? '1px solid #ef444466'
+          : '1px solid var(--border-subtle)',
+        boxShadow: celebrating
+          ? '0 0 0 3px rgba(34,197,94,0.22), 0 8px 24px rgba(34,197,94,0.18)'
+          : isOverdue
+          ? '0 0 0 1px #ef444422'
+          : undefined,
         position: 'relative',
-        zIndex: menuOpen ? 10 : undefined,
+        transform: `translateX(${dragX}px)`,
+        transition: dragging ? 'none' : 'transform 220ms var(--ease-spring), background 300ms, border-color 300ms, box-shadow 300ms',
+        touchAction: 'pan-y',
       }}
-      onClick={() => onTap(item)}
-      onKeyDown={e => e.key === 'Enter' && onTap(item)}
+      onClick={() => { if (suppressClick.current) return; setExpanded(e => !e) }}
+      onKeyDown={e => e.key === 'Enter' && setExpanded(x => !x)}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
     >
-      {/* Icon with done overlay */}
+      {/* Icon with done overlay + celebration burst */}
       <div
         className="relative w-12 h-12 rounded-[18px] flex items-center justify-center shrink-0 text-[24px]"
         style={{ background: `${color}22` }}
       >
-        {icon}
-        {done && (
+        <span
+          className={cn(
+            'transition-opacity duration-200',
+            displayDone ? 'opacity-0' : 'opacity-100',
+          )}
+        >
+          {icon}
+        </span>
+        {displayDone && (
           <div
             className="absolute inset-0 rounded-[18px] flex items-center justify-center"
-            style={{ background: 'rgba(34,197,94,0.78)' }}
+            style={{ background: 'rgba(34,197,94,0.82)' }}
           >
-            <Check size={20} color="#fff" strokeWidth={3} />
+            <Check
+              size={22}
+              color="#fff"
+              strokeWidth={3}
+              className={celebrating ? 'animate-check-pop' : ''}
+            />
           </div>
+        )}
+        {celebrating && (
+          <>
+            <span
+              className="pointer-events-none absolute inset-0 rounded-[18px] animate-ring-burst"
+              style={{ border: '3px solid #22c55e' }}
+            />
+            <span
+              className="pointer-events-none absolute top-1 left-1 w-1.5 h-1.5 rounded-full animate-confetti-fly"
+              style={{ background: '#22c55e', ['--cx' as never]: '-14px', ['--cy' as never]: '-16px' } as React.CSSProperties}
+            />
+            <span
+              className="pointer-events-none absolute top-1 right-1 w-1.5 h-1.5 rounded-full animate-confetti-fly"
+              style={{ background: '#fbbf24', ['--cx' as never]: '14px', ['--cy' as never]: '-16px' } as React.CSSProperties}
+            />
+            <span
+              className="pointer-events-none absolute bottom-1 left-1 w-1.5 h-1.5 rounded-full animate-confetti-fly"
+              style={{ background: '#6366f1', ['--cx' as never]: '-14px', ['--cy' as never]: '14px' } as React.CSSProperties}
+            />
+            <span
+              className="pointer-events-none absolute bottom-1 right-1 w-1.5 h-1.5 rounded-full animate-confetti-fly"
+              style={{ background: '#f97316', ['--cx' as never]: '14px', ['--cy' as never]: '14px' } as React.CSSProperties}
+            />
+          </>
         )}
       </div>
 
       {/* Title + chips */}
       <div className="flex-1 min-w-0">
         <p
-          className="font-sans font-bold text-[15px] leading-tight truncate"
+          className="font-sans font-bold text-[15px] leading-tight truncate transition-colors duration-300"
           style={{
-            color: done ? 'var(--text-tertiary)' : 'var(--text-primary)',
-            textDecoration: done ? 'line-through' : 'none',
+            color: displayDone ? 'var(--text-tertiary)' : 'var(--text-primary)',
+            textDecoration: displayDone ? 'line-through' : 'none',
             textDecorationColor: 'var(--color-done)',
           }}
         >
@@ -418,7 +613,14 @@ function TodayRow({ item, onTap }: { item: TodayItem; onTap: (item: TodayItem) =
           {!isHabit && item.task.dueTime && (
             <TypeChip label={item.task.dueTime} bg="var(--bg-surface-2)" color="var(--text-tertiary)" />
           )}
-          {!isHabit && item.task.priority === 'high' && !done && (
+          {isOverdue && (
+            <TypeChip
+              label={`Overdue · due ${format(parseISO(item.task.dueDate + 'T12:00:00'), 'MMM d')}`}
+              bg="rgba(239,68,68,0.14)"
+              color="var(--color-overdue)"
+            />
+          )}
+          {!isHabit && item.task.priority === 'high' && !displayDone && !isOverdue && (
             <TypeChip label="High" bg="rgba(239,68,68,0.1)" color="var(--color-overdue)" />
           )}
         </div>
@@ -427,16 +629,24 @@ function TodayRow({ item, onTap }: { item: TodayItem; onTap: (item: TodayItem) =
       {/* Completion checkbox */}
       <button
         type="button"
-        onClick={e => { e.stopPropagation(); onTap(item) }}
-        className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0 transition-all duration-200 active:scale-90"
+        onClick={e => { e.stopPropagation(); triggerComplete() }}
+        className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0 transition-all duration-300 active:scale-90"
         style={{
-          border: `2px solid ${done ? 'var(--color-done)' : 'var(--border-default)'}`,
-          background: done ? 'var(--color-done)' : 'transparent',
-          boxShadow: done ? '0 0 0 3px rgba(34,197,94,0.18)' : 'none',
+          border: `2px solid ${displayDone ? 'var(--color-done)' : 'var(--border-default)'}`,
+          background: displayDone ? 'var(--color-done)' : 'transparent',
+          boxShadow: displayDone ? '0 0 0 3px rgba(34,197,94,0.22)' : 'none',
+          transform: celebrating ? 'scale(1.06)' : 'scale(1)',
         }}
-        aria-label={done ? 'Mark incomplete' : 'Mark complete'}
+        aria-label={displayDone ? 'Mark incomplete' : 'Mark complete'}
       >
-        {done && <Check size={15} color="#fff" strokeWidth={3} />}
+        {displayDone && (
+          <Check
+            size={15}
+            color="#fff"
+            strokeWidth={3}
+            className={celebrating ? 'animate-check-pop' : ''}
+          />
+        )}
       </button>
 
       {/* 3-dot action menu */}
@@ -476,7 +686,7 @@ function TodayRow({ item, onTap }: { item: TodayItem; onTap: (item: TodayItem) =
             </button>
             <div style={{ height: '1px', background: 'var(--border-subtle)' }} />
             <button
-              onClick={e => { e.stopPropagation(); setMenuOpen(false); setConfirmOpen(true) }}
+              onClick={e => { e.stopPropagation(); handleDelete() }}
               className="w-full flex items-center gap-2.5 px-4 py-3 text-left transition-colors font-sans text-[13px] font-semibold hover:bg-[var(--bg-surface-2)]"
               style={{ color: 'var(--color-overdue)' }}
             >
@@ -485,16 +695,66 @@ function TodayRow({ item, onTap }: { item: TodayItem; onTap: (item: TodayItem) =
           </div>
         )}
       </div>
+    </div>
 
-      <ConfirmDialog
-        open={confirmOpen}
-        onClose={() => setConfirmOpen(false)}
-        onConfirm={handleDelete}
-        danger
-        title={`Delete "${title}"?`}
-        description={isHabit ? 'This will permanently remove the habit and all its history.' : 'This action cannot be undone.'}
-        confirmLabel="Delete"
-      />
+    {/* Inline expanded panel */}
+    {expanded && (
+      <div
+        className="mt-2 rounded-[20px] p-3 flex flex-col gap-2.5 animate-slide-in-bottom"
+        style={{
+          background: 'var(--bg-surface-2)',
+          border: '1px solid var(--border-subtle)',
+        }}
+        onClick={e => e.stopPropagation()}
+      >
+        <textarea
+          value={note}
+          onChange={e => setNote(e.target.value)}
+          onBlur={saveNote}
+          placeholder={isHabit ? "Add a note for today…" : "Add a note…"}
+          rows={2}
+          className="w-full resize-none rounded-xl px-3 py-2 font-body text-[13px] outline-none transition-colors"
+          style={{
+            background: 'var(--bg-surface)',
+            border: '1px solid var(--border-subtle)',
+            color: 'var(--text-primary)',
+          }}
+        />
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={handleView}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl font-sans text-[12px] font-bold transition-colors"
+            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
+          >
+            <Eye size={13} /> View
+          </button>
+          <button
+            onClick={handleEdit}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl font-sans text-[12px] font-bold transition-colors"
+            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
+          >
+            <Pencil size={13} /> Edit
+          </button>
+          {!isHabit && !done && (
+            <button
+              onClick={handleSnooze}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl font-sans text-[12px] font-bold transition-colors"
+              style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
+            >
+              <Clock size={13} /> Snooze 1d
+            </button>
+          )}
+          <button
+            onClick={() => setExpanded(false)}
+            className="ml-auto flex items-center gap-1 px-2 py-2 rounded-xl font-sans text-[11px] font-bold transition-colors"
+            style={{ color: 'var(--text-tertiary)' }}
+            aria-label="Collapse"
+          >
+            <XIcon size={13} />
+          </button>
+        </div>
+      </div>
+    )}
     </div>
   )
 }
@@ -504,7 +764,6 @@ export default function Dashboard() {
   const navigate = useNavigate()
   const openCreateComposer = useAppStore(s => s.openCreateComposer)
   const [search, setSearch] = useState('')
-  const [overdueOpen, setOverdueOpen] = useState(true)
   const [world, setWorld] = useState<World>(() =>
     (localStorage.getItem('dashboard-world') as World) ?? 'personal'
   )
@@ -826,51 +1085,36 @@ export default function Dashboard() {
         {/* ── Main scroll column ──────────────────────────────────── */}
         <div className="flex-1 min-w-0 px-4 lg:px-6 pb-28 lg:pb-16 space-y-5">
 
-          {/* Overdue alert — only show when viewing today */}
-          {isViewingToday && overdueTasks.length > 0 && (
+          {/* All-done celebration banner */}
+          {allDone && isViewingToday && (
             <div
-              className="glass-panel rounded-[26px] overflow-hidden"
-              style={{ border: '1px solid #ef444422', background: 'var(--color-overdue-bg)' }}
+              className="glass-panel rounded-[26px] p-5 flex items-center gap-4 animate-slide-in-bottom"
+              style={{
+                background: 'linear-gradient(135deg, rgba(34,197,94,0.18) 0%, rgba(99,102,241,0.18) 100%)',
+                border: '1px solid #22c55e44',
+                boxShadow: '0 8px 32px rgba(34,197,94,0.18)',
+              }}
             >
-              <button
-                onClick={() => setOverdueOpen(o => !o)}
-                className="w-full flex items-center gap-2.5 px-4 py-3 text-left"
+              <div
+                className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 animate-scale-check"
+                style={{ background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)' }}
               >
-                <AlertCircle size={14} color="var(--color-overdue)" className="shrink-0" />
-                <span className="font-sans font-extrabold text-[13px] flex-1" style={{ color: 'var(--color-overdue)' }}>
-                  {copy.overdueSection(overdueTasks.length)}
-                </span>
-                <ChevronDown
-                  size={14} color="var(--color-overdue)"
-                  style={{ transform: overdueOpen ? 'rotate(180deg)' : 'none', transition: 'transform 200ms', flexShrink: 0 }}
-                />
-              </button>
-              {overdueOpen && (
-                <div className="px-3 pb-3 flex flex-col gap-2">
-                  {overdueTasks.map(t => (
-                    <div
-                      key={t.id}
-                      role="button"
-                      onClick={() => navigate(`/tasks/${t.id}`)}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer"
-                      style={{ background: 'var(--bg-surface)' }}
-                    >
-                      <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-[18px]"
-                        style={{ background: `${t.color}20` }}>{t.icon}</div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-sans font-bold text-[13px] truncate" style={{ color: 'var(--text-primary)' }}>{t.title}</p>
-                        <p className="font-body text-[11px]" style={{ color: 'var(--color-overdue)' }}>
-                          Due {format(parseISO(t.dueDate + 'T12:00:00'), 'MMM d')}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                <PartyPopper size={26} color="#fff" strokeWidth={2.2} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-sans font-extrabold text-[17px] text-[var(--text-primary)] leading-tight">
+                  All done for today!
+                </p>
+                <p className="font-body text-[13px] text-[var(--text-secondary)] mt-1 leading-snug">
+                  {bestStreak > 0
+                    ? `Streak alive — ${bestStreak} day${bestStreak === 1 ? '' : 's'} and counting. Rest easy.`
+                    : 'Every win counts. See you tomorrow.'}
+                </p>
+              </div>
             </div>
           )}
 
-          {/* Today — unified habits + tasks */}
+          {/* Today — unified habits + tasks (overdue tasks appear inline, highlighted) */}
           {allTodayItems.length > 0 && (
             <div>
               <div className="flex items-center gap-2 mb-3">
@@ -885,8 +1129,8 @@ export default function Dashboard() {
               <div className="flex flex-col gap-2">
                 {allTodayItems.map(item =>
                   item.kind === 'habit'
-                    ? <TodayRow key={item.habit.id} item={item} onTap={handleItemTap} />
-                    : <TodayRow key={item.task.id} item={item} onTap={handleItemTap} />
+                    ? <TodayRow key={item.habit.id} item={item} onTap={handleItemTap} todayStr={todayStr} selectedDate={selectedDate} />
+                    : <TodayRow key={item.task.id} item={item} onTap={handleItemTap} todayStr={todayStr} selectedDate={selectedDate} />
                 )}
               </div>
             </div>

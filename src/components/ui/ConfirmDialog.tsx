@@ -29,7 +29,11 @@ export function ConfirmDialog({
     <Dialog.Root open={open} onOpenChange={o => !o && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-[var(--z-overlay)] bg-[var(--bg-overlay)] backdrop-blur-sm animate-fade-in" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[var(--z-modal)] w-[calc(100vw-2.5rem)] max-w-[340px] rounded-[26px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 shadow-xl outline-none animate-zoom-in-95">
+        <Dialog.Content
+          onClick={e => e.stopPropagation()}
+          onPointerDown={e => e.stopPropagation()}
+          className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[var(--z-modal)] w-[calc(100vw-2.5rem)] max-w-[340px] rounded-[26px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 shadow-xl outline-none animate-zoom-in-95"
+        >
           {/* Icon + text */}
           <div className="flex flex-col items-center text-center gap-3 mb-5">
             {danger && (

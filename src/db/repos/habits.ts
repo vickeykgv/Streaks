@@ -46,6 +46,11 @@ export const habitsRepo = {
     scheduleSyncSoon()
   },
 
+  async restore(id: string) {
+    await db.habits.update(id, { deletedAt: undefined, updatedAt: now(), dirty: true })
+    scheduleSyncSoon()
+  },
+
   async removeTagFromAll(tagId: string) {
     const habits = await db.habits.filter(h => !h.deletedAt && h.tags.includes(tagId)).toArray()
     await Promise.all(

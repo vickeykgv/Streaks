@@ -54,6 +54,23 @@ export const tasksRepo = {
     scheduleSyncSoon()
   },
 
+  async restore(id: string) {
+    await db.tasks.update(id, { deletedAt: undefined, updatedAt: now(), dirty: true })
+    scheduleSyncSoon()
+  },
+
+  async snooze(id: string, days = 1) {
+    const t = await db.tasks.get(id)
+    if (!t) return
+    const d = new Date(t.dueDate + 'T12:00:00')
+    d.setDate(d.getDate() + days)
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const dd = String(d.getDate()).padStart(2, '0')
+    await db.tasks.update(id, { dueDate: `${y}-${m}-${dd}`, updatedAt: now(), dirty: true })
+    scheduleSyncSoon()
+  },
+
   async removeTagFromAll(tagId: string) {
     const tasks = await db.tasks.filter(t => !t.deletedAt && t.tags.includes(tagId)).toArray()
     await Promise.all(

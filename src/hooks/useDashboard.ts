@@ -47,25 +47,42 @@ export function useDashboard(worldFilter: World = 'personal', selectedDate?: str
     [todaysHabits, entryMap]
   )
 
-  // Tasks due on the selected date in the active world
-  const todaysAllTasks = useMemo(
-    () => (tasks ?? []).filter(t =>
-      t.dueDate === dateStr && (t.world ?? 'personal') === worldFilter
-    ),
-    [tasks, dateStr, worldFilter]
-  )
+  const isViewingToday = dateStr === todayStr
 
+  // Tasks shown on the selected date in the active world.
+  // For today: every pending task with dueDate <= today (carries over until done),
+  //            plus tasks completed today.
+  // For other dates: tasks due on that specific date.
   const pendingTasks = useMemo(
-    () => todaysAllTasks.filter(t => t.status === 'pending'),
-    [todaysAllTasks]
+    () => (tasks ?? []).filter(t => {
+      if ((t.world ?? 'personal') !== worldFilter) return false
+      if (t.status !== 'pending') return false
+      return isViewingToday ? t.dueDate <= todayStr : t.dueDate === dateStr
+    }),
+    [tasks, dateStr, todayStr, isViewingToday, worldFilter]
   )
 
   const doneTasks = useMemo(
-    () => todaysAllTasks.filter(t => t.status === 'done'),
-    [todaysAllTasks]
+    () => (tasks ?? []).filter(t => {
+      if ((t.world ?? 'personal') !== worldFilter) return false
+      if (t.status !== 'done') return false
+      if (!isViewingToday) return t.dueDate === dateStr
+      if (!t.completedAt) return t.dueDate === todayStr
+      const completedDay = new Date(t.completedAt)
+      const y = completedDay.getFullYear()
+      const m = String(completedDay.getMonth() + 1).padStart(2, '0')
+      const d = String(completedDay.getDate()).padStart(2, '0')
+      return `${y}-${m}-${d}` === todayStr
+    }),
+    [tasks, dateStr, todayStr, isViewingToday, worldFilter]
   )
 
-  // Overdue and upcoming are always relative to today, not selectedDate
+  const todaysAllTasks = useMemo(
+    () => [...pendingTasks, ...doneTasks],
+    [pendingTasks, doneTasks]
+  )
+
+  // Overdue is always relative to today
   const overdueTasks = useMemo(
     () => (tasks ?? []).filter(t =>
       t.status === 'pending' && t.dueDate < todayStr && (t.world ?? 'personal') === worldFilter
