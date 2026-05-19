@@ -53,6 +53,15 @@ async function markSynced<T extends SyncRecord>(
 
 let syncInProgress = false
 
+const SYNC_TIMEOUT_MS = 30_000
+
+function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const id = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms)
+    p.then(v => { clearTimeout(id); resolve(v) }, e => { clearTimeout(id); reject(e) })
+  })
+}
+
 export async function syncNow(): Promise<void> {
   const user = useSession.getState().user
   if (!user) return
@@ -66,8 +75,8 @@ export async function syncNow(): Promise<void> {
   try {
     const lastPulledAt = await settingsRepo.get<number>('lastPulledAt', 0)
 
-    // 1. PULL
-    const { serverTime, changes } = await pullChanges(lastPulledAt)
+    // 1. PULL (with timeout — Android PWA standalone mode sometimes stalls fetches)
+    const { serverTime, changes } = await withTimeout(pullChanges(lastPulledAt), SYNC_TIMEOUT_MS, 'pullChanges')
 
     // 2. MERGE
     await db.transaction('rw', [db.habits, db.tasks, db.habitEntries, db.tags], async () => {
@@ -90,12 +99,12 @@ export async function syncNow(): Promise<void> {
     const hasChanges = [dirtyHabits, dirtyTasks, dirtyEntries, dirtyTags].some(a => a.length > 0)
 
     if (hasChanges) {
-      const { syncedAt } = await pushChanges({
+      const { syncedAt } = await withTimeout(pushChanges({
         habits:  dirtyHabits,
         tasks:   dirtyTasks,
         entries: dirtyEntries,
         tags:    dirtyTags,
-      })
+      }), SYNC_TIMEOUT_MS, 'pushChanges')
 
       // 4. ACK — clear dirty flags
       await db.transaction('rw', [db.habits, db.tasks, db.habitEntries, db.tags], async () => {

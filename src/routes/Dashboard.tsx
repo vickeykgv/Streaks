@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Bell, Plus, Search, Briefcase, Home, Check, MoreVertical, Eye, Pencil, Trash2, Sparkles, PartyPopper, Clock, X as XIcon } from 'lucide-react'
+import { Bell, Plus, Search, Briefcase, Home, Check, MoreVertical, Eye, Pencil, Trash2, Sparkles, PartyPopper, Clock } from 'lucide-react'
 import { EmptyState } from '@/components/ui'
 import { toast } from '@/store/toastStore'
 import { format, parseISO, subDays, addDays } from 'date-fns'
@@ -330,16 +330,14 @@ type TodayItem =
 const SWIPE_THRESHOLD = 80
 const SWIPE_MAX = 140
 
-function TodayRow({ item, onTap, todayStr, selectedDate }: {
+function TodayRow({ item, onTap, todayStr }: {
   item: TodayItem
   onTap: (item: TodayItem) => void
   todayStr: string
-  selectedDate: string
 }) {
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
   const [celebrating, setCelebrating] = useState(false)
-  const [expanded, setExpanded] = useState(false)
   const [dragX, setDragX] = useState(0)
   const [dragging, setDragging] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -347,6 +345,7 @@ function TodayRow({ item, onTap, todayStr, selectedDate }: {
   const startY = useRef(0)
   const axisLocked = useRef<'x' | 'y' | null>(null)
   const suppressClick = useRef(false)
+  const lastTapAt = useRef(0)
 
   useEffect(() => {
     if (!menuOpen) return
@@ -371,21 +370,11 @@ function TodayRow({ item, onTap, todayStr, selectedDate }: {
     ? item.habit.measurementType === 'checkbox'
     : item.task.measurementType === 'checkbox')
 
-  // Local note state for inline editing
-  const initialNote = isHabit ? (item.entry?.note ?? '') : (item.task.description ?? '')
-  const [note, setNote] = useState(initialNote)
-  useEffect(() => { setNote(initialNote) }, [initialNote])
-
-  const saveNote = async () => {
-    if (note === initialNote) return
-    if (isHabit) {
-      await entriesRepo.upsert(item.habit.id, selectedDate, { note: note || undefined })
-    } else {
-      await tasksRepo.update(item.task.id, { description: note || undefined })
-    }
-  }
-
+  // Debounce against duplicate fire (touch+click can both arrive on Android PWA)
   const triggerComplete = () => {
+    const now = Date.now()
+    if (now - lastTapAt.current < 600) return
+    lastTapAt.current = now
     if (celebrating) return
     if (willCompleteCheckbox) {
       setCelebrating(true)
@@ -403,7 +392,6 @@ function TodayRow({ item, onTap, todayStr, selectedDate }: {
 
   const handleDelete = async () => {
     setMenuOpen(false)
-    setExpanded(false)
     if (isHabit) await habitsRepo.delete(id)
     else await tasksRepo.delete(id)
     toast.success(`"${title}" deleted`, {
@@ -416,15 +404,15 @@ function TodayRow({ item, onTap, todayStr, selectedDate }: {
   }
 
   const handleSnooze = async () => {
+    setMenuOpen(false)
     if (isHabit) return
     await tasksRepo.snooze(item.task.id, 1)
     toast.success(`"${title}" snoozed to tomorrow`)
-    setExpanded(false)
   }
 
   // Swipe handlers
   const onTouchStart = (e: React.TouchEvent) => {
-    if (expanded || celebrating) return
+    if (celebrating) return
     startX.current = e.touches[0].clientX
     startY.current = e.touches[0].clientY
     axisLocked.current = null
@@ -526,8 +514,8 @@ function TodayRow({ item, onTap, todayStr, selectedDate }: {
         transition: dragging ? 'none' : 'transform 220ms var(--ease-spring), background 300ms, border-color 300ms, box-shadow 300ms',
         touchAction: 'pan-y',
       }}
-      onClick={() => { if (suppressClick.current) return; setExpanded(e => !e) }}
-      onKeyDown={e => e.key === 'Enter' && setExpanded(x => !x)}
+      onClick={() => { if (suppressClick.current) return; triggerComplete() }}
+      onKeyDown={e => e.key === 'Enter' && triggerComplete()}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
@@ -684,6 +672,15 @@ function TodayRow({ item, onTap, todayStr, selectedDate }: {
             >
               <Pencil size={14} /> Edit
             </button>
+            {!isHabit && !done && (
+              <button
+                onClick={e => { e.stopPropagation(); handleSnooze() }}
+                className="w-full flex items-center gap-2.5 px-4 py-3 text-left transition-colors font-sans text-[13px] font-semibold hover:bg-[var(--bg-surface-2)]"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                <Clock size={14} /> Snooze 1d
+              </button>
+            )}
             <div style={{ height: '1px', background: 'var(--border-subtle)' }} />
             <button
               onClick={e => { e.stopPropagation(); handleDelete() }}
@@ -697,64 +694,6 @@ function TodayRow({ item, onTap, todayStr, selectedDate }: {
       </div>
     </div>
 
-    {/* Inline expanded panel */}
-    {expanded && (
-      <div
-        className="mt-2 rounded-[20px] p-3 flex flex-col gap-2.5 animate-slide-in-bottom"
-        style={{
-          background: 'var(--bg-surface-2)',
-          border: '1px solid var(--border-subtle)',
-        }}
-        onClick={e => e.stopPropagation()}
-      >
-        <textarea
-          value={note}
-          onChange={e => setNote(e.target.value)}
-          onBlur={saveNote}
-          placeholder={isHabit ? "Add a note for today…" : "Add a note…"}
-          rows={2}
-          className="w-full resize-none rounded-xl px-3 py-2 font-body text-[13px] outline-none transition-colors"
-          style={{
-            background: 'var(--bg-surface)',
-            border: '1px solid var(--border-subtle)',
-            color: 'var(--text-primary)',
-          }}
-        />
-        <div className="flex items-center gap-2 flex-wrap">
-          <button
-            onClick={handleView}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl font-sans text-[12px] font-bold transition-colors"
-            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
-          >
-            <Eye size={13} /> View
-          </button>
-          <button
-            onClick={handleEdit}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl font-sans text-[12px] font-bold transition-colors"
-            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
-          >
-            <Pencil size={13} /> Edit
-          </button>
-          {!isHabit && !done && (
-            <button
-              onClick={handleSnooze}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl font-sans text-[12px] font-bold transition-colors"
-              style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
-            >
-              <Clock size={13} /> Snooze 1d
-            </button>
-          )}
-          <button
-            onClick={() => setExpanded(false)}
-            className="ml-auto flex items-center gap-1 px-2 py-2 rounded-xl font-sans text-[11px] font-bold transition-colors"
-            style={{ color: 'var(--text-tertiary)' }}
-            aria-label="Collapse"
-          >
-            <XIcon size={13} />
-          </button>
-        </div>
-      </div>
-    )}
     </div>
   )
 }
@@ -1129,8 +1068,8 @@ export default function Dashboard() {
               <div className="flex flex-col gap-2">
                 {allTodayItems.map(item =>
                   item.kind === 'habit'
-                    ? <TodayRow key={item.habit.id} item={item} onTap={handleItemTap} todayStr={todayStr} selectedDate={selectedDate} />
-                    : <TodayRow key={item.task.id} item={item} onTap={handleItemTap} todayStr={todayStr} selectedDate={selectedDate} />
+                    ? <TodayRow key={item.habit.id} item={item} onTap={handleItemTap} todayStr={todayStr} />
+                    : <TodayRow key={item.task.id} item={item} onTap={handleItemTap} todayStr={todayStr} />
                 )}
               </div>
             </div>
