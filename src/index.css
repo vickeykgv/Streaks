@@ -3,9 +3,19 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Hide scrollbars everywhere on mobile while keeping scrolling functional */
 ::-webkit-scrollbar {
   width: 0;
+  height: 0;
   background: transparent;
+}
+::-webkit-scrollbar-thumb,
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+html, body, * {
+  scrollbar-width: none;       /* Firefox */
+  -ms-overflow-style: none;    /* old IE/Edge */
 }
 
 body {
