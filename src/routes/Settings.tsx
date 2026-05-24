@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Moon, Sun, Monitor, Download, Upload, Trash2, ChevronRight, LogIn, LogOut, User, Bell } from 'lucide-react'
+import { Moon, Sun, Monitor, Download, Upload, Trash2, ChevronRight, LogIn, LogOut, User, Bell, Wallet } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { setTheme, type Theme } from '@/lib/theme'
 import { settingsRepo } from '@/db/repos/settings'
@@ -7,7 +7,9 @@ import { db } from '@/db/database'
 import { toast } from '@/store/toastStore'
 import { authClient } from '@/auth/client'
 import { useSession } from '@/auth/session'
-import { downloadExport, importAll } from '@/lib/exportImport'
+import { downloadExport, importAll, exportTransactionsCsv } from '@/lib/exportImport'
+import { categoriesRepo } from '@/db/repos/spending/categories'
+import { accountsRepo } from '@/db/repos/spending/accounts'
 import { TimePicker } from '@/components/ui'
 import { isAppBadgeSupported } from '@/lib/appBadge'
 
@@ -47,6 +49,7 @@ function SectionCard({ title, children }: { title: string; children: React.React
 export default function Settings() {
   const [theme, setThemeState] = useState<Theme>('system')
   const [weekStart, setWeekStartState] = useState<0 | 1>(1)
+  const [baseCurrency, setBaseCurrencyState] = useState('INR')
   const [showClearConfirm, setShowClearConfirm] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false)
@@ -59,6 +62,7 @@ export default function Settings() {
   useEffect(() => {
     settingsRepo.get<Theme>('theme', 'dark').then(v => setThemeState(v))
     settingsRepo.get<0 | 1>('weekStart', 1).then(v => setWeekStartState(v))
+    settingsRepo.get<string>('baseCurrency', 'INR').then(v => setBaseCurrencyState(v))
     settingsRepo.get<{ enabled: boolean; from: string; to: string }>(
       'quietHours',
       { enabled: false, from: '22:00', to: '08:00' },
@@ -220,11 +224,48 @@ export default function Settings() {
             </div>
           </SectionCard>
 
+          <SectionCard title="Spending">
+            <div className="px-4 py-4">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[var(--bg-surface-2)] text-[var(--text-secondary)]">
+                  <Wallet size={16} />
+                </div>
+                <div>
+                  <div className="font-sans text-[14px] font-semibold text-[var(--text-primary)]">Base Currency</div>
+                  <div className="font-body text-[12px] text-[var(--text-tertiary)]">All amounts displayed in this currency</div>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {(['INR', 'USD', 'EUR', 'GBP', 'JPY', 'AUD'] as const).map(c => {
+                  const on = baseCurrency === c
+                  return (
+                    <button
+                      key={c}
+                      onClick={async () => {
+                        setBaseCurrencyState(c)
+                        await settingsRepo.set('baseCurrency', c)
+                      }}
+                      className="rounded-2xl py-3 font-sans text-[13px] font-bold transition-all"
+                      style={{
+                        background: on ? 'var(--color-brand-500)' : 'var(--bg-surface-2)',
+                        color: on ? 'var(--text-on-brand)' : 'var(--text-secondary)',
+                        border: on ? 'none' : '1px solid var(--border-subtle)',
+                        boxShadow: on ? 'var(--shadow-card)' : 'none',
+                      }}
+                    >
+                      {c}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          </SectionCard>
+
           <SectionCard title="Data">
             <SettingRow
               icon={<Download size={16} />}
               label="Export JSON"
-              description="Download all your data"
+              description="Download all your data (habits + spending)"
               onClick={handleExport}
             />
             <SettingRow
@@ -232,6 +273,25 @@ export default function Settings() {
               label="Import JSON"
               description="Restore from a backup"
               onClick={handleImport}
+            />
+            <SettingRow
+              icon={<Download size={16} />}
+              label="Export transactions CSV"
+              description="Spreadsheet-friendly transaction export"
+              onClick={async () => {
+                try {
+                  const [cats, accs] = await Promise.all([
+                    categoriesRepo.getAll(true),
+                    accountsRepo.getAll(),
+                  ])
+                  const catNames = Object.fromEntries(cats.map(c => [c.id, `${c.icon} ${c.name}`]))
+                  const accNames = Object.fromEntries(accs.map(a => [a.id, `${a.icon} ${a.name}`]))
+                  await exportTransactionsCsv(catNames, accNames)
+                  toast.success('CSV downloaded')
+                } catch {
+                  toast.error('Export failed')
+                }
+              }}
             />
             <SettingRow
               icon={<Trash2 size={16} />}

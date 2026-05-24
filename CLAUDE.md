@@ -4,6 +4,11 @@
 A Progressive Web App for tracking recurring habits and one-off tasks with deadlines.
 Full plan: see `PLAN.md`. Phase-by-phase execution guides: see `docs/phase-*.md`.
 
+## Modules
+The app is multi-module. Each module has its own nav items behind a top-of-nav module switcher, but shares auth, sync, and the design system.
+- **Habits / Tasks** (module #1, current) — see `PLAN.md` and `docs/phase-*.md`.
+- **Spending Tracker** (module #2, planned) — see `spending_tracker_plan.md` and `docs/spending-phase-*.md`.
+
 ## Architecture rules (enforce always)
 1. **No direct Dexie calls in components.** All DB access goes through `src/db/repos/`. If you need a query that doesn't exist in a repo, add it there.
 2. **No business logic in components.** Recurrence, streaks, completion rules, merge logic all live in `src/lib/` or `src/sync/` as pure functions.

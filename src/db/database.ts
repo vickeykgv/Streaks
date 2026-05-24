@@ -1,5 +1,6 @@
 import Dexie, { type Table } from 'dexie'
 import type { Habit, Task, HabitEntry, Tag, Settings } from '@/types'
+import type { SpendingAccount, SpendingCategory, SpendingTransaction, SpendingBudget, SpendingRecurring } from '@/types/spending'
 
 export class HabitTrackerDB extends Dexie {
   habits!: Table<Habit, string>
@@ -7,6 +8,11 @@ export class HabitTrackerDB extends Dexie {
   habitEntries!: Table<HabitEntry, string>
   tags!: Table<Tag, string>
   settings!: Table<Settings, string>
+  spendingAccounts!: Table<SpendingAccount, string>
+  spendingCategories!: Table<SpendingCategory, string>
+  spendingTransactions!: Table<SpendingTransaction, string>
+  spendingBudgets!: Table<SpendingBudget, string>
+  spendingRecurring!: Table<SpendingRecurring, string>
 
   constructor() {
     super('HabitTrackerDB')
@@ -37,6 +43,14 @@ export class HabitTrackerDB extends Dexie {
         tag['dirty'] = true
       })
     )
+
+    this.version(4).stores({
+      spendingAccounts:     'id, archived, dirty, updatedAt, ownerId',
+      spendingCategories:   'id, type, parentId, dirty, updatedAt, ownerId',
+      spendingTransactions: 'id, date, accountId, categoryId, type, recurringId, dirty, updatedAt, ownerId, *tags',
+      spendingBudgets:      'id, period, dirty, updatedAt, ownerId',
+      spendingRecurring:    'id, nextRunAt, dirty, updatedAt, ownerId',
+    })
   }
 }
 

@@ -31,21 +31,33 @@ serve(async (req) => {
   const since = parseInt(url.searchParams.get('since') ?? '0', 10)
   const serverTime = Date.now()
 
-  const [habits, tasks, entries, tags] = await Promise.all([
-    supabase.from('habits')       .select('*').eq('user_id', user.id).gt('updated_at', since),
-    supabase.from('tasks')        .select('*').eq('user_id', user.id).gt('updated_at', since),
-    supabase.from('habit_entries').select('*').eq('user_id', user.id).gt('updated_at', since),
-    supabase.from('tags')         .select('*').eq('user_id', user.id).gt('updated_at', since),
-  ])
+  const [habits, tasks, entries, tags,
+    spendingAccounts, spendingCategories, spendingTransactions, spendingBudgets, spendingRecurring] =
+    await Promise.all([
+      supabase.from('habits')               .select('*').eq('user_id', user.id).gt('updated_at', since),
+      supabase.from('tasks')                .select('*').eq('user_id', user.id).gt('updated_at', since),
+      supabase.from('habit_entries')        .select('*').eq('user_id', user.id).gt('updated_at', since),
+      supabase.from('tags')                 .select('*').eq('user_id', user.id).gt('updated_at', since),
+      supabase.from('spending_accounts')    .select('*').eq('user_id', user.id).gt('updated_at', since),
+      supabase.from('spending_categories')  .select('*').eq('user_id', user.id).gt('updated_at', since),
+      supabase.from('spending_transactions').select('*').eq('user_id', user.id).gt('updated_at', since),
+      supabase.from('spending_budgets')     .select('*').eq('user_id', user.id).gt('updated_at', since),
+      supabase.from('spending_recurring')   .select('*').eq('user_id', user.id).gt('updated_at', since),
+    ])
 
   return new Response(
     JSON.stringify({
       serverTime,
       changes: {
-        habits:  habits.data  ?? [],
-        tasks:   tasks.data   ?? [],
-        entries: entries.data ?? [],
-        tags:    tags.data    ?? [],
+        habits:               habits.data               ?? [],
+        tasks:                tasks.data                ?? [],
+        entries:              entries.data              ?? [],
+        tags:                 tags.data                 ?? [],
+        spendingAccounts:     spendingAccounts.data     ?? [],
+        spendingCategories:   spendingCategories.data   ?? [],
+        spendingTransactions: spendingTransactions.data ?? [],
+        spendingBudgets:      spendingBudgets.data      ?? [],
+        spendingRecurring:    spendingRecurring.data    ?? [],
       },
     }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },

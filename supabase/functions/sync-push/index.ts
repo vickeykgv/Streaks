@@ -24,17 +24,26 @@ serve(async (req) => {
   }
 
   const body = await req.json()
-  const { habits = [], tasks = [], entries = [], tags = [] } = body.changes ?? {}
+  const {
+    habits = [], tasks = [], entries = [], tags = [],
+    spendingAccounts = [], spendingCategories = [], spendingTransactions = [],
+    spendingBudgets = [], spendingRecurring = [],
+  } = body.changes ?? {}
 
   // Stamp user_id on all records to enforce ownership
   const stamp = (records: Record<string, unknown>[]) =>
     records.map(r => ({ ...r, user_id: user.id }))
 
   const results = await Promise.allSettled([
-    habits.length  && supabase.from('habits')       .upsert(stamp(habits),  { onConflict: 'id' }),
-    tasks.length   && supabase.from('tasks')        .upsert(stamp(tasks),   { onConflict: 'id' }),
-    entries.length && supabase.from('habit_entries').upsert(stamp(entries), { onConflict: 'id' }),
-    tags.length    && supabase.from('tags')         .upsert(stamp(tags),    { onConflict: 'id' }),
+    habits.length               && supabase.from('habits')               .upsert(stamp(habits),               { onConflict: 'id' }),
+    tasks.length                && supabase.from('tasks')                .upsert(stamp(tasks),                { onConflict: 'id' }),
+    entries.length              && supabase.from('habit_entries')        .upsert(stamp(entries),              { onConflict: 'id' }),
+    tags.length                 && supabase.from('tags')                 .upsert(stamp(tags),                 { onConflict: 'id' }),
+    spendingAccounts.length     && supabase.from('spending_accounts')    .upsert(stamp(spendingAccounts),     { onConflict: 'id' }),
+    spendingCategories.length   && supabase.from('spending_categories')  .upsert(stamp(spendingCategories),   { onConflict: 'id' }),
+    spendingTransactions.length && supabase.from('spending_transactions').upsert(stamp(spendingTransactions), { onConflict: 'id' }),
+    spendingBudgets.length      && supabase.from('spending_budgets')     .upsert(stamp(spendingBudgets),      { onConflict: 'id' }),
+    spendingRecurring.length    && supabase.from('spending_recurring')   .upsert(stamp(spendingRecurring),    { onConflict: 'id' }),
   ])
 
   const errors = results.filter(r => r.status === 'rejected')

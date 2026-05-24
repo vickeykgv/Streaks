@@ -79,39 +79,71 @@ export async function syncNow(): Promise<void> {
     const { serverTime, changes } = await withTimeout(pullChanges(lastPulledAt), SYNC_TIMEOUT_MS, 'pullChanges')
 
     // 2. MERGE
-    await db.transaction('rw', [db.habits, db.tasks, db.habitEntries, db.tags], async () => {
-      await mergeIntoTable(db.habits,       changes.habits)
-      await mergeIntoTable(db.tasks,        changes.tasks)
-      await mergeIntoTable(db.habitEntries, changes.entries)
-      await mergeIntoTable(db.tags,         changes.tags)
+    await db.transaction('rw', [
+      db.habits, db.tasks, db.habitEntries, db.tags,
+      db.spendingAccounts, db.spendingCategories, db.spendingTransactions, db.spendingBudgets, db.spendingRecurring,
+    ], async () => {
+      await mergeIntoTable(db.habits,               changes.habits)
+      await mergeIntoTable(db.tasks,                changes.tasks)
+      await mergeIntoTable(db.habitEntries,          changes.entries)
+      await mergeIntoTable(db.tags,                  changes.tags)
+      await mergeIntoTable(db.spendingAccounts,      changes.spendingAccounts)
+      await mergeIntoTable(db.spendingCategories,    changes.spendingCategories)
+      await mergeIntoTable(db.spendingTransactions,  changes.spendingTransactions)
+      await mergeIntoTable(db.spendingBudgets,       changes.spendingBudgets)
+      await mergeIntoTable(db.spendingRecurring,     changes.spendingRecurring)
     })
 
     await settingsRepo.set('lastPulledAt', serverTime)
 
     // 3. PUSH
-    const [dirtyHabits, dirtyTasks, dirtyEntries, dirtyTags] = await Promise.all([
+    const [
+      dirtyHabits, dirtyTasks, dirtyEntries, dirtyTags,
+      dirtyAccounts, dirtyCategories, dirtyTransactions, dirtyBudgets, dirtyRecurring,
+    ] = await Promise.all([
       getDirtyRecords(db.habits),
       getDirtyRecords(db.tasks),
       getDirtyRecords(db.habitEntries),
       getDirtyRecords(db.tags),
+      getDirtyRecords(db.spendingAccounts),
+      getDirtyRecords(db.spendingCategories),
+      getDirtyRecords(db.spendingTransactions),
+      getDirtyRecords(db.spendingBudgets),
+      getDirtyRecords(db.spendingRecurring),
     ])
 
-    const hasChanges = [dirtyHabits, dirtyTasks, dirtyEntries, dirtyTags].some(a => a.length > 0)
+    const hasChanges = [
+      dirtyHabits, dirtyTasks, dirtyEntries, dirtyTags,
+      dirtyAccounts, dirtyCategories, dirtyTransactions, dirtyBudgets, dirtyRecurring,
+    ].some(a => a.length > 0)
 
     if (hasChanges) {
       const { syncedAt } = await withTimeout(pushChanges({
-        habits:  dirtyHabits,
-        tasks:   dirtyTasks,
-        entries: dirtyEntries,
-        tags:    dirtyTags,
+        habits:               dirtyHabits,
+        tasks:                dirtyTasks,
+        entries:              dirtyEntries,
+        tags:                 dirtyTags,
+        spendingAccounts:     dirtyAccounts,
+        spendingCategories:   dirtyCategories,
+        spendingTransactions: dirtyTransactions,
+        spendingBudgets:      dirtyBudgets,
+        spendingRecurring:    dirtyRecurring,
       }), SYNC_TIMEOUT_MS, 'pushChanges')
 
       // 4. ACK — clear dirty flags
-      await db.transaction('rw', [db.habits, db.tasks, db.habitEntries, db.tags], async () => {
-        await markSynced(db.habits,       dirtyHabits.map(r => r.id),  syncedAt)
-        await markSynced(db.tasks,        dirtyTasks.map(r => r.id),   syncedAt)
-        await markSynced(db.habitEntries, dirtyEntries.map(r => r.id), syncedAt)
-        await markSynced(db.tags,         dirtyTags.map(r => r.id),    syncedAt)
+      await db.transaction('rw', [
+        db.habits, db.tasks, db.habitEntries, db.tags,
+        db.spendingAccounts, db.spendingCategories, db.spendingTransactions, db.spendingBudgets, db.spendingRecurring,
+      ], async () => {
+        await markSynced(db.habits,               dirtyHabits.map(r => r.id),       syncedAt)
+        await markSynced(db.tasks,                dirtyTasks.map(r => r.id),        syncedAt)
+        await markSynced(db.habitEntries,          dirtyEntries.map(r => r.id),      syncedAt)
+        await markSynced(db.tags,                  dirtyTags.map(r => r.id),         syncedAt)
+        await markSynced(db.spendingAccounts,      dirtyAccounts.map(r => r.id),     syncedAt)
+        await markSynced(db.spendingCategories,    dirtyCategories.map(r => r.id),   syncedAt)
+        await markSynced(db.spendingTransactions,  dirtyTransactions.map(r => r.id), syncedAt)
+        await markSynced(db.spendingBudgets,       dirtyBudgets.map(r => r.id),      syncedAt)
+        await markSynced(db.spendingRecurring,     dirtyRecurring.map(r => r.id),    syncedAt)
       })
     }
 
