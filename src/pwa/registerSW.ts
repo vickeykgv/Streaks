@@ -6,7 +6,6 @@ export function initServiceWorker(onUpdateAvailable: () => void) {
   updateSWFn = registerSW({
     immediate: true,
     onNeedRefresh() {
-      // With autoUpdate, vite-pwa skips this — kept for safety if mode changes.
       onUpdateAvailable()
     },
     onOfflineReady() {
