@@ -169,7 +169,7 @@ export default function Tasks() {
 
         <button
           onClick={() => openCreateComposer('task')}
-          className="fixed bottom-24 right-4 z-20 flex h-[58px] w-[58px] items-center justify-center rounded-[22px] text-[var(--text-on-brand)] transition-transform active:scale-95 lg:bottom-8 lg:right-8"
+          className="fixed bottom-40 right-4 z-20 flex h-[58px] w-[58px] items-center justify-center rounded-[22px] text-[var(--text-on-brand)] transition-transform active:scale-95 lg:bottom-8 lg:right-8"
           style={{ background: 'var(--color-brand-500)', boxShadow: 'var(--shadow-fab)' }}
           aria-label="New task"
         >

@@ -1193,7 +1193,7 @@ export default function Dashboard() {
       {/* ── FAB — mobile only ───────────────────────────────────────────── */}
       <button
         onClick={() => openCreateComposer('habit', world)}
-        className="lg:hidden fixed bottom-24 right-4 w-[58px] h-[58px] rounded-[22px] text-[var(--text-on-brand)] flex items-center justify-center z-20 active:scale-95 transition-all duration-150"
+        className="lg:hidden fixed bottom-40 right-4 w-[58px] h-[58px] rounded-[22px] text-[var(--text-on-brand)] flex items-center justify-center z-20 active:scale-95 transition-all duration-150"
         style={{ background: 'var(--color-brand-500)', boxShadow: 'var(--shadow-fab)' }}
         aria-label="Add habit or task"
       >

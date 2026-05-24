@@ -160,7 +160,7 @@ export default function SpendingBudgets() {
       {/* FAB */}
       <button
         onClick={() => navigate('/spending/budgets/new')}
-        className="fixed bottom-24 right-5 z-30 flex h-14 w-14 items-center justify-center rounded-full shadow-lg active:scale-90 transition-transform"
+        className="fixed bottom-40 right-5 z-30 flex h-14 w-14 items-center justify-center rounded-full shadow-lg active:scale-90 transition-transform"
         style={{ background: 'var(--color-brand-500)', boxShadow: 'var(--shadow-glow)' }}
         aria-label="Add budget"
       >
