@@ -31,19 +31,28 @@ serve(async (req) => {
   const since = parseInt(url.searchParams.get('since') ?? '0', 10)
   const serverTime = Date.now()
 
-  const [habits, tasks, entries, tags,
-    spendingAccounts, spendingCategories, spendingTransactions, spendingBudgets, spendingRecurring] =
-    await Promise.all([
-      supabase.from('habits')               .select('*').eq('user_id', user.id).gt('updated_at', since),
-      supabase.from('tasks')                .select('*').eq('user_id', user.id).gt('updated_at', since),
-      supabase.from('habit_entries')        .select('*').eq('user_id', user.id).gt('updated_at', since),
-      supabase.from('tags')                 .select('*').eq('user_id', user.id).gt('updated_at', since),
-      supabase.from('spending_accounts')    .select('*').eq('user_id', user.id).gt('updated_at', since),
-      supabase.from('spending_categories')  .select('*').eq('user_id', user.id).gt('updated_at', since),
-      supabase.from('spending_transactions').select('*').eq('user_id', user.id).gt('updated_at', since),
-      supabase.from('spending_budgets')     .select('*').eq('user_id', user.id).gt('updated_at', since),
-      supabase.from('spending_recurring')   .select('*').eq('user_id', user.id).gt('updated_at', since),
-    ])
+  const [
+    habits, tasks, entries, tags,
+    spendingAccounts, spendingCategories, spendingTransactions, spendingBudgets, spendingRecurring,
+    motoVehicles, motoFuelLogs, motoServices, motoParts, motoIssues, motoNotes, motoDocuments,
+  ] = await Promise.all([
+    supabase.from('habits')               .select('*').eq('user_id', user.id).gt('updated_at', since),
+    supabase.from('tasks')                .select('*').eq('user_id', user.id).gt('updated_at', since),
+    supabase.from('habit_entries')        .select('*').eq('user_id', user.id).gt('updated_at', since),
+    supabase.from('tags')                 .select('*').eq('user_id', user.id).gt('updated_at', since),
+    supabase.from('spending_accounts')    .select('*').eq('user_id', user.id).gt('updated_at', since),
+    supabase.from('spending_categories')  .select('*').eq('user_id', user.id).gt('updated_at', since),
+    supabase.from('spending_transactions').select('*').eq('user_id', user.id).gt('updated_at', since),
+    supabase.from('spending_budgets')     .select('*').eq('user_id', user.id).gt('updated_at', since),
+    supabase.from('spending_recurring')   .select('*').eq('user_id', user.id).gt('updated_at', since),
+    supabase.from('moto_vehicles')        .select('*').eq('user_id', user.id).gt('updated_at', since),
+    supabase.from('moto_fuel_logs')       .select('*').eq('user_id', user.id).gt('updated_at', since),
+    supabase.from('moto_services')        .select('*').eq('user_id', user.id).gt('updated_at', since),
+    supabase.from('moto_parts')           .select('*').eq('user_id', user.id).gt('updated_at', since),
+    supabase.from('moto_issues')          .select('*').eq('user_id', user.id).gt('updated_at', since),
+    supabase.from('moto_notes')           .select('*').eq('user_id', user.id).gt('updated_at', since),
+    supabase.from('moto_documents')       .select('*').eq('user_id', user.id).gt('updated_at', since),
+  ])
 
   return new Response(
     JSON.stringify({
@@ -58,6 +67,13 @@ serve(async (req) => {
         spendingTransactions: spendingTransactions.data ?? [],
         spendingBudgets:      spendingBudgets.data      ?? [],
         spendingRecurring:    spendingRecurring.data    ?? [],
+        motoVehicles:  motoVehicles.data  ?? [],
+        motoFuelLogs:  motoFuelLogs.data  ?? [],
+        motoServices:  motoServices.data  ?? [],
+        motoParts:     motoParts.data     ?? [],
+        motoIssues:    motoIssues.data    ?? [],
+        motoNotes:     motoNotes.data     ?? [],
+        motoDocuments: motoDocuments.data ?? [],
       },
     }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },

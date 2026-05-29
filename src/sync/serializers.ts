@@ -3,6 +3,10 @@ import type {
   SpendingAccount, SpendingCategory, SpendingTransaction,
   SpendingBudget, SpendingRecurring,
 } from '@/types/spending'
+import type {
+  MotoVehicle, MotoFuelLog, MotoService, MotoPart,
+  MotoIssue, MotoNote, MotoDocument,
+} from '@/types/moto'
 
 // ─── Server row types (snake_case, as returned from Supabase) ────────────────
 
@@ -311,7 +315,169 @@ export function spendingRecurringFromServer(r: ServerSpendingRecurring): Spendin
     deletedAt: r.deleted_at ?? undefined, syncedAt: r.synced_at ?? undefined, dirty: false }
 }
 
+// ─── Moto server types ────────────────────────────────────────────────────────
+
+export interface ServerMotoVehicle {
+  id: string; user_id: string; name: string; make: string; model: string; year: number
+  registration_no: string; vehicle_type: string; fuel_type: string
+  tank_capacity_l: number | null; purchase_date: string | null; purchase_odo_km: number | null
+  current_odo_km: number; color: string; archived: boolean
+  created_at: number; updated_at: number; deleted_at: number | null; synced_at: number | null
+}
+export interface ServerMotoFuelLog {
+  id: string; user_id: string; vehicle_id: string; date: string
+  odo_km: number; litres: number; price_per_l: number; total_cost: number
+  fuel_type: string; station: string | null; full_tank: boolean; note: string | null
+  created_at: number; updated_at: number; deleted_at: number | null; synced_at: number | null
+}
+export interface ServerMotoService {
+  id: string; user_id: string; vehicle_id: string; date: string; odo_km: number
+  service_type: string; workshop: string | null; labor_cost: number; parts_cost: number; total_cost: number
+  next_due_date: string | null; next_due_odo_km: number | null; note: string | null
+  linked_issue_ids: string[]
+  created_at: number; updated_at: number; deleted_at: number | null; synced_at: number | null
+}
+export interface ServerMotoPart {
+  id: string; user_id: string; vehicle_id: string; part_name: string
+  part_number: string | null; brand: string | null; installed_at: string; odo_km_at_install: number; cost: number
+  expected_life_km: number | null; expected_life_months: number | null; linked_service_id: string | null; note: string | null
+  created_at: number; updated_at: number; deleted_at: number | null; synced_at: number | null
+}
+export interface ServerMotoIssue {
+  id: string; user_id: string; vehicle_id: string; title: string; description: string | null
+  status: string; priority: string; reported_at: string; resolved_at: string | null
+  resolved_by_service_id: string | null
+  created_at: number; updated_at: number; deleted_at: number | null; synced_at: number | null
+}
+export interface ServerMotoNote {
+  id: string; user_id: string; vehicle_id: string; title: string | null; body: string; pinned: boolean
+  created_at: number; updated_at: number; deleted_at: number | null; synced_at: number | null
+}
+export interface ServerMotoDocument {
+  id: string; user_id: string; vehicle_id: string | null; type: string
+  provider: string | null; policy_no: string | null; issued_date: string | null
+  expiry_date: string; premium: number | null; reminder_days_before: number; note: string | null
+  created_at: number; updated_at: number; deleted_at: number | null; synced_at: number | null
+}
+
+// fromServer
+export function motoVehicleFromServer(r: ServerMotoVehicle): MotoVehicle {
+  return { id: r.id, ownerId: r.user_id, name: r.name, make: r.make, model: r.model, year: r.year,
+    registrationNo: r.registration_no, vehicleType: r.vehicle_type as MotoVehicle['vehicleType'],
+    fuelType: r.fuel_type as MotoVehicle['fuelType'],
+    tankCapacityL: r.tank_capacity_l ?? undefined, purchaseDate: r.purchase_date ?? undefined,
+    purchaseOdoKm: r.purchase_odo_km ?? undefined, currentOdoKm: r.current_odo_km,
+    color: r.color, archived: r.archived,
+    createdAt: r.created_at, updatedAt: r.updated_at,
+    deletedAt: r.deleted_at ?? undefined, syncedAt: r.synced_at ?? undefined, dirty: false }
+}
+export function motoFuelLogFromServer(r: ServerMotoFuelLog): MotoFuelLog {
+  return { id: r.id, ownerId: r.user_id, vehicleId: r.vehicle_id, date: r.date,
+    odoKm: r.odo_km, litres: r.litres, pricePerL: r.price_per_l, totalCost: r.total_cost,
+    fuelType: r.fuel_type as MotoFuelLog['fuelType'], station: r.station ?? undefined,
+    fullTank: r.full_tank, note: r.note ?? undefined,
+    createdAt: r.created_at, updatedAt: r.updated_at,
+    deletedAt: r.deleted_at ?? undefined, syncedAt: r.synced_at ?? undefined, dirty: false }
+}
+export function motoServiceFromServer(r: ServerMotoService): MotoService {
+  return { id: r.id, ownerId: r.user_id, vehicleId: r.vehicle_id, date: r.date, odoKm: r.odo_km,
+    serviceType: r.service_type as MotoService['serviceType'], workshop: r.workshop ?? undefined,
+    laborCost: r.labor_cost, partsCost: r.parts_cost, totalCost: r.total_cost,
+    nextDueDate: r.next_due_date ?? undefined, nextDueOdoKm: r.next_due_odo_km ?? undefined,
+    note: r.note ?? undefined, linkedIssueIds: r.linked_issue_ids ?? [],
+    createdAt: r.created_at, updatedAt: r.updated_at,
+    deletedAt: r.deleted_at ?? undefined, syncedAt: r.synced_at ?? undefined, dirty: false }
+}
+export function motoPartFromServer(r: ServerMotoPart): MotoPart {
+  return { id: r.id, ownerId: r.user_id, vehicleId: r.vehicle_id, partName: r.part_name,
+    partNumber: r.part_number ?? undefined, brand: r.brand ?? undefined,
+    installedAt: r.installed_at, odoKmAtInstall: r.odo_km_at_install, cost: r.cost,
+    expectedLifeKm: r.expected_life_km ?? undefined, expectedLifeMonths: r.expected_life_months ?? undefined,
+    linkedServiceId: r.linked_service_id ?? undefined, note: r.note ?? undefined,
+    createdAt: r.created_at, updatedAt: r.updated_at,
+    deletedAt: r.deleted_at ?? undefined, syncedAt: r.synced_at ?? undefined, dirty: false }
+}
+export function motoIssueFromServer(r: ServerMotoIssue): MotoIssue {
+  return { id: r.id, ownerId: r.user_id, vehicleId: r.vehicle_id, title: r.title,
+    description: r.description ?? undefined, status: r.status as MotoIssue['status'],
+    priority: r.priority as MotoIssue['priority'], reportedAt: r.reported_at,
+    resolvedAt: r.resolved_at ?? undefined, resolvedByServiceId: r.resolved_by_service_id ?? undefined,
+    createdAt: r.created_at, updatedAt: r.updated_at,
+    deletedAt: r.deleted_at ?? undefined, syncedAt: r.synced_at ?? undefined, dirty: false }
+}
+export function motoNoteFromServer(r: ServerMotoNote): MotoNote {
+  return { id: r.id, ownerId: r.user_id, vehicleId: r.vehicle_id, title: r.title ?? undefined,
+    body: r.body, pinned: r.pinned,
+    createdAt: r.created_at, updatedAt: r.updated_at,
+    deletedAt: r.deleted_at ?? undefined, syncedAt: r.synced_at ?? undefined, dirty: false }
+}
+export function motoDocumentFromServer(r: ServerMotoDocument): MotoDocument {
+  return { id: r.id, ownerId: r.user_id, vehicleId: r.vehicle_id ?? undefined, type: r.type as MotoDocument['type'],
+    provider: r.provider ?? undefined, policyNo: r.policy_no ?? undefined,
+    issuedDate: r.issued_date ?? undefined, expiryDate: r.expiry_date,
+    premium: r.premium ?? undefined, reminderDaysBefore: r.reminder_days_before, note: r.note ?? undefined,
+    createdAt: r.created_at, updatedAt: r.updated_at,
+    deletedAt: r.deleted_at ?? undefined, syncedAt: r.synced_at ?? undefined, dirty: false }
+}
+
 // toServer
+export function motoVehicleToServer(v: MotoVehicle): Omit<ServerMotoVehicle, 'user_id'> {
+  return { id: v.id, name: v.name, make: v.make, model: v.model, year: v.year,
+    registration_no: v.registrationNo, vehicle_type: v.vehicleType, fuel_type: v.fuelType,
+    tank_capacity_l: v.tankCapacityL ?? null, purchase_date: v.purchaseDate ?? null,
+    purchase_odo_km: v.purchaseOdoKm ?? null, current_odo_km: v.currentOdoKm,
+    color: v.color, archived: v.archived,
+    created_at: v.createdAt, updated_at: v.updatedAt,
+    deleted_at: v.deletedAt ?? null, synced_at: v.syncedAt ?? null }
+}
+export function motoFuelLogToServer(l: MotoFuelLog): Omit<ServerMotoFuelLog, 'user_id'> {
+  return { id: l.id, vehicle_id: l.vehicleId, date: l.date,
+    odo_km: l.odoKm, litres: l.litres, price_per_l: l.pricePerL, total_cost: l.totalCost,
+    fuel_type: l.fuelType, station: l.station ?? null, full_tank: l.fullTank, note: l.note ?? null,
+    created_at: l.createdAt, updated_at: l.updatedAt,
+    deleted_at: l.deletedAt ?? null, synced_at: l.syncedAt ?? null }
+}
+export function motoServiceToServer(s: MotoService): Omit<ServerMotoService, 'user_id'> {
+  return { id: s.id, vehicle_id: s.vehicleId, date: s.date, odo_km: s.odoKm,
+    service_type: s.serviceType, workshop: s.workshop ?? null,
+    labor_cost: s.laborCost, parts_cost: s.partsCost, total_cost: s.totalCost,
+    next_due_date: s.nextDueDate ?? null, next_due_odo_km: s.nextDueOdoKm ?? null,
+    note: s.note ?? null, linked_issue_ids: s.linkedIssueIds,
+    created_at: s.createdAt, updated_at: s.updatedAt,
+    deleted_at: s.deletedAt ?? null, synced_at: s.syncedAt ?? null }
+}
+export function motoPartToServer(p: MotoPart): Omit<ServerMotoPart, 'user_id'> {
+  return { id: p.id, vehicle_id: p.vehicleId, part_name: p.partName,
+    part_number: p.partNumber ?? null, brand: p.brand ?? null,
+    installed_at: p.installedAt, odo_km_at_install: p.odoKmAtInstall, cost: p.cost,
+    expected_life_km: p.expectedLifeKm ?? null, expected_life_months: p.expectedLifeMonths ?? null,
+    linked_service_id: p.linkedServiceId ?? null, note: p.note ?? null,
+    created_at: p.createdAt, updated_at: p.updatedAt,
+    deleted_at: p.deletedAt ?? null, synced_at: p.syncedAt ?? null }
+}
+export function motoIssueToServer(i: MotoIssue): Omit<ServerMotoIssue, 'user_id'> {
+  return { id: i.id, vehicle_id: i.vehicleId, title: i.title,
+    description: i.description ?? null, status: i.status, priority: i.priority,
+    reported_at: i.reportedAt, resolved_at: i.resolvedAt ?? null,
+    resolved_by_service_id: i.resolvedByServiceId ?? null,
+    created_at: i.createdAt, updated_at: i.updatedAt,
+    deleted_at: i.deletedAt ?? null, synced_at: i.syncedAt ?? null }
+}
+export function motoNoteToServer(n: MotoNote): Omit<ServerMotoNote, 'user_id'> {
+  return { id: n.id, vehicle_id: n.vehicleId, title: n.title ?? null, body: n.body, pinned: n.pinned,
+    created_at: n.createdAt, updated_at: n.updatedAt,
+    deleted_at: n.deletedAt ?? null, synced_at: n.syncedAt ?? null }
+}
+export function motoDocumentToServer(d: MotoDocument): Omit<ServerMotoDocument, 'user_id'> {
+  return { id: d.id, vehicle_id: d.vehicleId ?? null, type: d.type,
+    provider: d.provider ?? null, policy_no: d.policyNo ?? null,
+    issued_date: d.issuedDate ?? null, expiry_date: d.expiryDate,
+    premium: d.premium ?? null, reminder_days_before: d.reminderDaysBefore, note: d.note ?? null,
+    created_at: d.createdAt, updated_at: d.updatedAt,
+    deleted_at: d.deletedAt ?? null, synced_at: d.syncedAt ?? null }
+}
+
+// toServer (spending)
 export function spendingAccountToServer(a: SpendingAccount): Omit<ServerSpendingAccount, 'user_id'> {
   return { id: a.id, name: a.name, type: a.type, opening_balance: a.openingBalance,
     currency: a.currency, color: a.color, icon: a.icon, archived: a.archived,

@@ -1,10 +1,12 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { BottomNav } from '@/components/BottomNav'
 import { SideNav } from '@/components/SideNav'
+import { MobileTopBar } from '@/components/MobileTopBar'
 import { UpdateToast } from '@/components/UpdateToast'
 import { InstallPrompt } from '@/components/InstallPrompt'
 import { BottomSheet, Modal } from '@/components/ui'
 import Editor from '@/routes/Editor'
+import { MotoEditorHost } from '@/components/moto/MotoEditorHost'
 import { useAppStore } from '@/store/appStore'
 import { useSession } from '@/auth/session'
 import { syncNow } from '@/sync/engine'
@@ -74,6 +76,7 @@ export function AppShell({ children }: AppShellProps) {
 
       {/* Main content — shifted right by the collapsed sidebar width on desktop */}
       <div className="lg:ml-[112px]">
+        <MobileTopBar />
         {children}
       </div>
 
@@ -111,6 +114,9 @@ export function AppShell({ children }: AppShellProps) {
           />
         </BottomSheet>
       )}
+
+      {/* Moto module editor host — modal-driven CRUD for all moto entities */}
+      <MotoEditorHost />
     </div>
   )
 }

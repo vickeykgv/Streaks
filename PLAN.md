@@ -1,6 +1,6 @@
 # Habit Tracker PWA — Project Plan
 
-> **Modules:** This project is evolving into a multi-module app. The Habits/Tasks plan below is module #1. Module #2 (Spending Tracker) has its own phased plan at [`spending_tracker_plan.md`](./spending_tracker_plan.md).
+> **Modules:** This project is evolving into a multi-module app. The Habits/Tasks plan below is module #1. Module #2 (Spending Tracker) has its own phased plan at [`spending_tracker_plan.md`](./spending_tracker_plan.md). Module #3 (Moto Logging) is planned in [`moto_spending_implementation.md`](./moto_spending_implementation.md).
 
 ## 1. Product Overview
 

@@ -1,13 +1,17 @@
 import { create } from 'zustand'
 
-export type ActiveModule = 'habits' | 'spending'
+export type ActiveModule = 'habits' | 'spending' | 'moto'
 
 interface ModuleState {
   activeModule: ActiveModule
   setModule: (m: ActiveModule) => void
 }
 
-const stored = (localStorage.getItem('active-module') ?? 'habits') as ActiveModule
+const rawStored = localStorage.getItem('active-module')
+const stored: ActiveModule =
+  rawStored === 'habits' || rawStored === 'spending' || rawStored === 'moto'
+    ? rawStored
+    : 'habits'
 
 export const useModule = create<ModuleState>((set) => ({
   activeModule: stored,

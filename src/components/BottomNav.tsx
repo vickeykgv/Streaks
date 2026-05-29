@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { Home, List, Calendar, BarChart2, Settings, Wallet, ArrowLeftRight, Building2, Target } from 'lucide-react'
+import { Home, List, Calendar, BarChart2, Settings, Wallet, ArrowLeftRight, Building2, Target, Bike, Car, Fuel, Wrench } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useModule } from '@/store/module'
 import { ModuleSwitcher } from '@/components/ModuleSwitcher'
@@ -20,9 +20,20 @@ const spendingItems = [
   { to: '/settings',              label: 'Settings', Icon: Settings,      exact: false },
 ]
 
+const motoItems = [
+  { to: '/moto',          label: 'Dashboard', Icon: Bike,     exact: true  },
+  { to: '/moto/vehicles', label: 'Garage',    Icon: Car,      exact: false },
+  { to: '/moto/fuel',     label: 'Fuel',      Icon: Fuel,     exact: false },
+  { to: '/moto/service',  label: 'Service',   Icon: Wrench,   exact: false },
+  { to: '/settings',      label: 'Settings',  Icon: Settings, exact: false },
+]
+
 export function BottomNav() {
   const { activeModule } = useModule()
-  const items = activeModule === 'habits' ? habitsItems : spendingItems
+  const items =
+    activeModule === 'habits'   ? habitsItems   :
+    activeModule === 'spending' ? spendingItems :
+    motoItems
 
   return (
     <nav

@@ -1,11 +1,12 @@
 import { useNavigate } from 'react-router-dom'
-import { Flame, Wallet } from 'lucide-react'
+import { Flame, Wallet, Bike } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useModule, type ActiveModule } from '@/store/module'
 
 const MODULES: { id: ActiveModule; label: string; Icon: typeof Flame; home: string }[] = [
   { id: 'habits',   label: 'Habits', Icon: Flame,  home: '/' },
   { id: 'spending', label: 'Money',  Icon: Wallet, home: '/spending' },
+  { id: 'moto',     label: 'Moto',   Icon: Bike,   home: '/moto' },
 ]
 
 // Full-width horizontal segmented control for the mobile bottom nav

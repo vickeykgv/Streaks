@@ -809,28 +809,21 @@ export default function Dashboard() {
       {/* ══════════════════════════════════════════════════════════════
           STICKY HEADER
       ══════════════════════════════════════════════════════════════ */}
-      <header className="sticky top-0 z-10 border-b border-[var(--border-subtle)] bg-[rgba(var(--bg-app-rgb),0.72)] backdrop-blur-xl">
-        <div className="flex items-center gap-3 px-4 pt-3 lg:px-6">
-
-          {/* Mobile logo mark */}
-          <div
-            className="lg:hidden w-9 h-9 rounded-2xl flex items-center justify-center shrink-0 shadow-[var(--shadow-glow)]"
-            style={{ background: 'var(--color-brand-500)' }}
-          >
-            <span className="font-sans font-extrabold text-[13px] text-[var(--text-on-brand)]">S</span>
-          </div>
+      <header className="sticky top-[60px] lg:top-0 z-10 border-b border-[var(--border-subtle)] bg-[rgba(var(--bg-app-rgb),0.72)] backdrop-blur-xl">
+        {/* Desktop-only top row — logo mark, greeting, search, world switcher, sync, bell, new */}
+        <div className="hidden lg:flex items-center gap-3 px-6 pt-3">
 
           {/* Date + greeting */}
           <div className="flex-1 min-w-0">
             <p className="section-kicker leading-none">{dateStr}</p>
-            <p className="font-sans font-extrabold text-[16px] lg:text-[18px] text-[var(--text-primary)] tracking-tight leading-snug truncate mt-0.5">
+            <p className="font-sans font-extrabold text-[18px] text-[var(--text-primary)] tracking-tight leading-snug truncate mt-0.5">
               {greeting}
             </p>
           </div>
 
-          {/* Search — desktop only */}
+          {/* Search */}
           <div
-            className="hidden lg:flex items-center gap-2 px-3 h-10 rounded-2xl w-[220px] shrink-0 glass-panel"
+            className="flex items-center gap-2 px-3 h-10 rounded-2xl w-[220px] shrink-0 glass-panel"
             style={{ background: 'var(--bg-surface)' }}
           >
             <Search size={13} color="var(--text-tertiary)" />
@@ -842,10 +835,8 @@ export default function Dashboard() {
             />
           </div>
 
-          {/* World switcher — desktop only */}
-          <div className="hidden lg:flex shrink-0">
-            <WorldSwitcher world={world} onChange={switchWorld} />
-          </div>
+          {/* World switcher */}
+          <WorldSwitcher world={world} onChange={switchWorld} />
 
           {/* Sync status */}
           <SyncStatusBadge />
@@ -859,10 +850,10 @@ export default function Dashboard() {
             <Bell size={15} color="var(--text-secondary)" />
           </button>
 
-          {/* New button — desktop only */}
+          {/* New button */}
           <button
             onClick={() => openCreateComposer('habit', world)}
-            className="hidden lg:flex items-center gap-1.5 px-4 h-10 rounded-2xl text-[var(--text-on-brand)] font-sans font-bold text-[13px] shrink-0 transition-transform active:scale-95"
+            className="flex items-center gap-1.5 px-4 h-10 rounded-2xl text-[var(--text-on-brand)] font-sans font-bold text-[13px] shrink-0 transition-transform active:scale-95"
             style={{ background: 'var(--color-brand-500)', boxShadow: 'var(--shadow-glow)' }}
           >
             <Plus size={15} strokeWidth={2.5} />
@@ -870,7 +861,7 @@ export default function Dashboard() {
           </button>
         </div>
 
-        {/* Calendar strip — always visible in header */}
+        {/* Mobile-only search bar */}
         <div className="px-4 pt-3 lg:hidden">
           <div className="glass-panel flex items-center gap-2 rounded-2xl px-3 h-11">
             <Search size={14} color="var(--text-tertiary)" />

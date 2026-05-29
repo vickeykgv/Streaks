@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Home, List, Calendar, BarChart2, Settings, Tag, Flame, Wallet, ArrowLeftRight, Building2, Target } from 'lucide-react'
+import { Home, List, Calendar, BarChart2, Settings, Tag, Flame, Wallet, ArrowLeftRight, Building2, Target, Bike, Car, Fuel, Wrench } from 'lucide-react'
 import { format } from 'date-fns'
 import { habitsRepo } from '@/db/repos/habits'
 import { entriesRepo } from '@/db/repos/entries'
@@ -10,6 +10,7 @@ import { useModule, type ActiveModule } from '@/store/module'
 const MODULES: { id: ActiveModule; label: string; Icon: typeof Flame; home: string }[] = [
   { id: 'habits',   label: 'Habits', Icon: Flame,  home: '/' },
   { id: 'spending', label: 'Money',  Icon: Wallet, home: '/spending' },
+  { id: 'moto',     label: 'Moto',   Icon: Bike,   home: '/moto' },
 ]
 
 const habitsMainItems = [
@@ -25,6 +26,14 @@ const spendingMainItems = [
   { to: '/spending/accounts',     label: 'Accounts',     Icon: Building2,     exact: false },
   { to: '/spending/budgets',      label: 'Budgets',      Icon: Target,        exact: false },
   { to: '/spending/reports',      label: 'Reports',      Icon: BarChart2,     exact: false },
+]
+
+const motoMainItems = [
+  { to: '/moto',           label: 'Dashboard', Icon: Bike,      exact: true  },
+  { to: '/moto/vehicles',  label: 'Garage',    Icon: Car,       exact: false },
+  { to: '/moto/fuel',      label: 'Fuel',      Icon: Fuel,      exact: false },
+  { to: '/moto/service',   label: 'Service',   Icon: Wrench,    exact: false },
+  { to: '/moto/reports',   label: 'Reports',   Icon: BarChart2, exact: false },
 ]
 
 const footerItems = [
@@ -141,7 +150,10 @@ function SideModuleSwitcher() {
 
 export function SideNav() {
   const { activeModule } = useModule()
-  const mainItems = activeModule === 'habits' ? habitsMainItems : spendingMainItems
+  const mainItems =
+    activeModule === 'habits'   ? habitsMainItems   :
+    activeModule === 'spending' ? spendingMainItems :
+    motoMainItems
 
   return (
     <>
@@ -186,6 +198,11 @@ export function SideNav() {
             </div>
           )}
           {activeModule === 'spending' && (
+            <div className="flex flex-col gap-0.5 px-2.5 py-3 shrink-0 border-t border-[var(--border-subtle)]">
+              <NavItem to="/settings" label="Settings" Icon={Settings} />
+            </div>
+          )}
+          {activeModule === 'moto' && (
             <div className="flex flex-col gap-0.5 px-2.5 py-3 shrink-0 border-t border-[var(--border-subtle)]">
               <NavItem to="/settings" label="Settings" Icon={Settings} />
             </div>

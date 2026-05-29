@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Moon, Sun, Monitor, Download, Upload, Trash2, ChevronRight, LogIn, LogOut, User, Bell, Wallet } from 'lucide-react'
+import { Moon, Sun, Monitor, Download, Upload, Trash2, ChevronRight, LogIn, LogOut, User, Bell, Wallet, Gauge } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { setTheme, type Theme } from '@/lib/theme'
 import { settingsRepo } from '@/db/repos/settings'
@@ -7,11 +7,12 @@ import { db } from '@/db/database'
 import { toast } from '@/store/toastStore'
 import { authClient } from '@/auth/client'
 import { useSession } from '@/auth/session'
-import { downloadExport, importAll, exportTransactionsCsv } from '@/lib/exportImport'
+import { downloadExport, importAll, exportTransactionsCsv, downloadMotoExport } from '@/lib/exportImport'
 import { categoriesRepo } from '@/db/repos/spending/categories'
 import { accountsRepo } from '@/db/repos/spending/accounts'
 import { TimePicker } from '@/components/ui'
 import { isAppBadgeSupported } from '@/lib/appBadge'
+import type { UnitSystem } from '@/types/moto'
 
 function SettingRow({ icon, label, description, right, onClick }: {
   icon: React.ReactNode
@@ -50,6 +51,7 @@ export default function Settings() {
   const [theme, setThemeState] = useState<Theme>('system')
   const [weekStart, setWeekStartState] = useState<0 | 1>(1)
   const [baseCurrency, setBaseCurrencyState] = useState('INR')
+  const [unitSystem, setUnitSystemState] = useState<UnitSystem>('metric')
   const [showClearConfirm, setShowClearConfirm] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false)
@@ -63,6 +65,7 @@ export default function Settings() {
     settingsRepo.get<Theme>('theme', 'dark').then(v => setThemeState(v))
     settingsRepo.get<0 | 1>('weekStart', 1).then(v => setWeekStartState(v))
     settingsRepo.get<string>('baseCurrency', 'INR').then(v => setBaseCurrencyState(v))
+    settingsRepo.get<UnitSystem>('unitSystem', 'metric').then(v => setUnitSystemState(v))
     settingsRepo.get<{ enabled: boolean; from: string; to: string }>(
       'quietHours',
       { enabled: false, from: '22:00', to: '08:00' },
@@ -108,6 +111,13 @@ export default function Settings() {
       db.tasks.clear(),
       db.habitEntries.clear(),
       db.tags.clear(),
+      db.motoVehicles.clear(),
+      db.motoFuelLogs.clear(),
+      db.motoServices.clear(),
+      db.motoParts.clear(),
+      db.motoIssues.clear(),
+      db.motoNotes.clear(),
+      db.motoDocuments.clear(),
     ])
     setShowClearConfirm(false)
     toast.success('All data cleared')
@@ -261,12 +271,67 @@ export default function Settings() {
             </div>
           </SectionCard>
 
+          <SectionCard title="Moto">
+            <div className="px-4 py-4">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[var(--bg-surface-2)] text-[var(--text-secondary)]">
+                  <Gauge size={16} />
+                </div>
+                <div>
+                  <div className="font-sans text-[14px] font-semibold text-[var(--text-primary)]">Distance &amp; Volume Units</div>
+                  <div className="font-body text-[12px] text-[var(--text-tertiary)]">Used across the Moto module</div>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {([['Metric', 'metric'], ['Imperial', 'imperial']] as const).map(([label, val]) => {
+                  const on = unitSystem === val
+                  return (
+                    <button
+                      key={val}
+                      onClick={async () => {
+                        setUnitSystemState(val)
+                        await settingsRepo.set('unitSystem', val)
+                      }}
+                      className="rounded-2xl py-3 font-sans text-[13px] font-bold transition-all"
+                      style={{
+                        background: on ? 'var(--color-brand-500)' : 'var(--bg-surface-2)',
+                        color: on ? 'var(--text-on-brand)' : 'var(--text-secondary)',
+                        border: on ? 'none' : '1px solid var(--border-subtle)',
+                        boxShadow: on ? 'var(--shadow-card)' : 'none',
+                      }}
+                    >
+                      <div className="flex flex-col items-center gap-0.5">
+                        <span>{label}</span>
+                        <span className="font-normal text-[10px] opacity-80">
+                          {val === 'metric' ? 'km · L' : 'mi · gal'}
+                        </span>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          </SectionCard>
+
           <SectionCard title="Data">
             <SettingRow
               icon={<Download size={16} />}
               label="Export JSON"
-              description="Download all your data (habits + spending)"
+              description="Download all your data (habits, spending, moto)"
               onClick={handleExport}
+            />
+            <SettingRow
+              icon={<Download size={16} />}
+              label="Export Moto JSON"
+              description="Vehicles, fuel logs, services, parts, issues, notes, documents"
+              onClick={async () => {
+                try {
+                  await downloadMotoExport()
+                  toast.success('Moto backup downloaded')
+                } catch {
+                  toast.error('Export failed')
+                }
+              }}
             />
             <SettingRow
               icon={<Upload size={16} />}

@@ -82,6 +82,7 @@ export async function syncNow(): Promise<void> {
     await db.transaction('rw', [
       db.habits, db.tasks, db.habitEntries, db.tags,
       db.spendingAccounts, db.spendingCategories, db.spendingTransactions, db.spendingBudgets, db.spendingRecurring,
+      db.motoVehicles, db.motoFuelLogs, db.motoServices, db.motoParts, db.motoIssues, db.motoNotes, db.motoDocuments,
     ], async () => {
       await mergeIntoTable(db.habits,               changes.habits)
       await mergeIntoTable(db.tasks,                changes.tasks)
@@ -92,6 +93,13 @@ export async function syncNow(): Promise<void> {
       await mergeIntoTable(db.spendingTransactions,  changes.spendingTransactions)
       await mergeIntoTable(db.spendingBudgets,       changes.spendingBudgets)
       await mergeIntoTable(db.spendingRecurring,     changes.spendingRecurring)
+      await mergeIntoTable(db.motoVehicles,  changes.motoVehicles)
+      await mergeIntoTable(db.motoFuelLogs,  changes.motoFuelLogs)
+      await mergeIntoTable(db.motoServices,  changes.motoServices)
+      await mergeIntoTable(db.motoParts,     changes.motoParts)
+      await mergeIntoTable(db.motoIssues,    changes.motoIssues)
+      await mergeIntoTable(db.motoNotes,     changes.motoNotes)
+      await mergeIntoTable(db.motoDocuments, changes.motoDocuments)
     })
 
     await settingsRepo.set('lastPulledAt', serverTime)
@@ -100,6 +108,7 @@ export async function syncNow(): Promise<void> {
     const [
       dirtyHabits, dirtyTasks, dirtyEntries, dirtyTags,
       dirtyAccounts, dirtyCategories, dirtyTransactions, dirtyBudgets, dirtyRecurring,
+      dirtyVehicles, dirtyFuelLogs, dirtyServices, dirtyParts, dirtyIssues, dirtyNotes, dirtyDocs,
     ] = await Promise.all([
       getDirtyRecords(db.habits),
       getDirtyRecords(db.tasks),
@@ -110,11 +119,19 @@ export async function syncNow(): Promise<void> {
       getDirtyRecords(db.spendingTransactions),
       getDirtyRecords(db.spendingBudgets),
       getDirtyRecords(db.spendingRecurring),
+      getDirtyRecords(db.motoVehicles),
+      getDirtyRecords(db.motoFuelLogs),
+      getDirtyRecords(db.motoServices),
+      getDirtyRecords(db.motoParts),
+      getDirtyRecords(db.motoIssues),
+      getDirtyRecords(db.motoNotes),
+      getDirtyRecords(db.motoDocuments),
     ])
 
     const hasChanges = [
       dirtyHabits, dirtyTasks, dirtyEntries, dirtyTags,
       dirtyAccounts, dirtyCategories, dirtyTransactions, dirtyBudgets, dirtyRecurring,
+      dirtyVehicles, dirtyFuelLogs, dirtyServices, dirtyParts, dirtyIssues, dirtyNotes, dirtyDocs,
     ].some(a => a.length > 0)
 
     if (hasChanges) {
@@ -128,12 +145,20 @@ export async function syncNow(): Promise<void> {
         spendingTransactions: dirtyTransactions,
         spendingBudgets:      dirtyBudgets,
         spendingRecurring:    dirtyRecurring,
+        motoVehicles:  dirtyVehicles,
+        motoFuelLogs:  dirtyFuelLogs,
+        motoServices:  dirtyServices,
+        motoParts:     dirtyParts,
+        motoIssues:    dirtyIssues,
+        motoNotes:     dirtyNotes,
+        motoDocuments: dirtyDocs,
       }), SYNC_TIMEOUT_MS, 'pushChanges')
 
       // 4. ACK — clear dirty flags
       await db.transaction('rw', [
         db.habits, db.tasks, db.habitEntries, db.tags,
         db.spendingAccounts, db.spendingCategories, db.spendingTransactions, db.spendingBudgets, db.spendingRecurring,
+        db.motoVehicles, db.motoFuelLogs, db.motoServices, db.motoParts, db.motoIssues, db.motoNotes, db.motoDocuments,
       ], async () => {
         await markSynced(db.habits,               dirtyHabits.map(r => r.id),       syncedAt)
         await markSynced(db.tasks,                dirtyTasks.map(r => r.id),        syncedAt)
@@ -144,6 +169,13 @@ export async function syncNow(): Promise<void> {
         await markSynced(db.spendingTransactions,  dirtyTransactions.map(r => r.id), syncedAt)
         await markSynced(db.spendingBudgets,       dirtyBudgets.map(r => r.id),      syncedAt)
         await markSynced(db.spendingRecurring,     dirtyRecurring.map(r => r.id),    syncedAt)
+        await markSynced(db.motoVehicles,  dirtyVehicles.map(r => r.id),  syncedAt)
+        await markSynced(db.motoFuelLogs,  dirtyFuelLogs.map(r => r.id),  syncedAt)
+        await markSynced(db.motoServices,  dirtyServices.map(r => r.id),  syncedAt)
+        await markSynced(db.motoParts,     dirtyParts.map(r => r.id),     syncedAt)
+        await markSynced(db.motoIssues,    dirtyIssues.map(r => r.id),    syncedAt)
+        await markSynced(db.motoNotes,     dirtyNotes.map(r => r.id),     syncedAt)
+        await markSynced(db.motoDocuments, dirtyDocs.map(r => r.id),      syncedAt)
       })
     }
 

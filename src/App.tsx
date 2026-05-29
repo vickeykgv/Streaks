@@ -28,6 +28,15 @@ import CategoryEditor         from '@/routes/spending/CategoryEditor'
 import BudgetEditor           from '@/routes/spending/BudgetEditor'
 import SpendingRecurring      from '@/routes/spending/Recurring'
 import RecurringEditor        from '@/routes/spending/RecurringEditor'
+import MotoDashboard          from '@/routes/moto/Dashboard'
+import MotoVehicles           from '@/routes/moto/Vehicles'
+import MotoFuel               from '@/routes/moto/Fuel'
+import MotoService            from '@/routes/moto/Service'
+import MotoParts              from '@/routes/moto/Parts'
+import MotoIssues             from '@/routes/moto/Issues'
+import MotoNotes              from '@/routes/moto/Notes'
+import MotoDocuments          from '@/routes/moto/Documents'
+import MotoReports            from '@/routes/moto/Reports'
 
 const Stats = lazy(() => import('@/routes/Stats'))
 
@@ -116,6 +125,16 @@ export default function App() {
               <Route path="/spending/reports"              element={<SpendingReports />} />
               <Route path="/spending/new"                  element={<TransactionEditor />} />
               <Route path="/spending/edit/:id"             element={<TransactionEditor />} />
+              {/* Moto module */}
+              <Route path="/moto"            element={<MotoDashboard />} />
+              <Route path="/moto/vehicles"   element={<MotoVehicles />} />
+              <Route path="/moto/fuel"       element={<MotoFuel />} />
+              <Route path="/moto/service"    element={<MotoService />} />
+              <Route path="/moto/parts"      element={<MotoParts />} />
+              <Route path="/moto/issues"     element={<MotoIssues />} />
+              <Route path="/moto/notes"      element={<MotoNotes />} />
+              <Route path="/moto/documents"  element={<MotoDocuments />} />
+              <Route path="/moto/reports"    element={<MotoReports />} />
             </Routes>
           </Suspense>
         </AppShell>

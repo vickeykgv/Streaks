@@ -28,6 +28,8 @@ serve(async (req) => {
     habits = [], tasks = [], entries = [], tags = [],
     spendingAccounts = [], spendingCategories = [], spendingTransactions = [],
     spendingBudgets = [], spendingRecurring = [],
+    motoVehicles = [], motoFuelLogs = [], motoServices = [], motoParts = [],
+    motoIssues = [], motoNotes = [], motoDocuments = [],
   } = body.changes ?? {}
 
   // Stamp user_id on all records to enforce ownership
@@ -44,6 +46,13 @@ serve(async (req) => {
     spendingTransactions.length && supabase.from('spending_transactions').upsert(stamp(spendingTransactions), { onConflict: 'id' }),
     spendingBudgets.length      && supabase.from('spending_budgets')     .upsert(stamp(spendingBudgets),      { onConflict: 'id' }),
     spendingRecurring.length    && supabase.from('spending_recurring')   .upsert(stamp(spendingRecurring),    { onConflict: 'id' }),
+    motoVehicles.length  && supabase.from('moto_vehicles') .upsert(stamp(motoVehicles),  { onConflict: 'id' }),
+    motoFuelLogs.length  && supabase.from('moto_fuel_logs').upsert(stamp(motoFuelLogs),  { onConflict: 'id' }),
+    motoServices.length  && supabase.from('moto_services') .upsert(stamp(motoServices),  { onConflict: 'id' }),
+    motoParts.length     && supabase.from('moto_parts')    .upsert(stamp(motoParts),     { onConflict: 'id' }),
+    motoIssues.length    && supabase.from('moto_issues')   .upsert(stamp(motoIssues),    { onConflict: 'id' }),
+    motoNotes.length     && supabase.from('moto_notes')    .upsert(stamp(motoNotes),     { onConflict: 'id' }),
+    motoDocuments.length && supabase.from('moto_documents').upsert(stamp(motoDocuments), { onConflict: 'id' }),
   ])
 
   const errors = results.filter(r => r.status === 'rejected')
