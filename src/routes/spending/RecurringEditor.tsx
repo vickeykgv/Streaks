@@ -51,11 +51,11 @@ function Field({ label, error, children }: { label: string; error?: string; chil
 const inputCls = 'h-11 w-full rounded-xl border border-[var(--border-subtle)] bg-surface px-3.5 font-sans text-[15px] font-semibold text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--color-brand-500)]'
 
 const INTERVALS: { value: SpendingInterval; label: string }[] = [
-  { value: 'daily',    label: 'Daily'     },
-  { value: 'weekly',   label: 'Weekly'    },
-  { value: 'biweekly', label: 'Biweekly'  },
-  { value: 'monthly',  label: 'Monthly'   },
-  { value: 'yearly',   label: 'Yearly'    },
+  { value: 'daily',    label: 'Daily'    },
+  { value: 'weekly',   label: 'Weekly'   },
+  { value: 'biweekly', label: 'Biweekly' },
+  { value: 'monthly',  label: 'Monthly'  },
+  { value: 'yearly',   label: 'Yearly'   },
 ]
 
 const TX_TYPES: { value: TransactionType; label: string; color: string }[] = [
@@ -64,9 +64,22 @@ const TX_TYPES: { value: TransactionType; label: string; color: string }[] = [
   { value: 'transfer', label: 'Transfer', color: '#6366f1' },
 ]
 
-export default function RecurringEditor() {
+interface RecurringEditorProps {
+  embedded?: boolean
+  initialId?: string
+  onClose?: () => void
+  onSaved?: () => void
+}
+
+export default function RecurringEditor({
+  embedded = false,
+  initialId,
+  onClose,
+  onSaved,
+}: RecurringEditorProps = {}) {
   const navigate = useNavigate()
-  const { id } = useParams<{ id?: string }>()
+  const { id: routeId } = useParams<{ id?: string }>()
+  const id = initialId ?? routeId
   const isEdit = !!id
   const [loading, setLoading] = useState(isEdit)
   const [showDelete, setShowDelete] = useState(false)
@@ -97,7 +110,7 @@ export default function RecurringEditor() {
   useEffect(() => {
     if (!isEdit || !id) return
     recurringRepo.getById(id).then(r => {
-      if (!r) { navigate('/spending/recurring'); return }
+      if (!r) { embedded ? onClose?.() : navigate('/spending/recurring'); return }
       reset({
         name:        r.name,
         type:        r.type,
@@ -112,7 +125,12 @@ export default function RecurringEditor() {
       })
       setLoading(false)
     })
-  }, [id, isEdit, navigate, reset])
+  }, [id, isEdit, embedded, navigate, onClose, reset])
+
+  const done = () => {
+    if (embedded) { onSaved?.(); onClose?.() }
+    else navigate('/spending/recurring')
+  }
 
   const onSubmit = async (data: FormValues) => {
     const nextRunAt = new Date(data.startDate).getTime()
@@ -139,7 +157,7 @@ export default function RecurringEditor() {
         await recurringRepo.create(payload)
         toast.success('Recurring rule created')
       }
-      navigate('/spending/recurring')
+      done()
     } catch {
       toast.error('Failed to save')
     }
@@ -149,7 +167,162 @@ export default function RecurringEditor() {
     if (!id) return
     await recurringRepo.delete(id)
     toast.info('Rule deleted', { label: 'Undo', onClick: () => recurringRepo.restore(id) })
-    navigate('/spending/recurring')
+    done()
+  }
+
+  const formContent = (
+    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
+      <div className={embedded ? 'flex flex-col gap-5' : 'glass-panel rounded-[28px] p-5 flex flex-col gap-5'}>
+
+        <Field label="Name" error={errors.name?.message}>
+          <input {...register('name')} className={inputCls} placeholder="e.g. Monthly Rent" autoFocus={!isEdit} />
+        </Field>
+
+        <Field label="Type">
+          <div className="grid grid-cols-3 gap-2">
+            {TX_TYPES.map(({ value, label, color }) => {
+              const on = selectedType === value
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => { setValue('type', value); setValue('categoryId', '') }}
+                  className="rounded-2xl py-2.5 font-sans text-[13px] font-bold transition-all"
+                  style={{
+                    background: on ? color : 'var(--bg-surface-2)',
+                    color: on ? '#fff' : 'var(--text-secondary)',
+                    border: on ? 'none' : '1px solid var(--border-subtle)',
+                  }}
+                >
+                  {label}
+                </button>
+              )
+            })}
+          </div>
+        </Field>
+
+        <Field label="Amount" error={errors.amount?.message}>
+          <input {...register('amount')} type="number" step="0.01" min="0" className={inputCls} placeholder="0" />
+        </Field>
+
+        <Field label="Account" error={errors.accountId?.message}>
+          <Controller
+            control={control}
+            name="accountId"
+            render={({ field }) => (
+              <Select value={field.value} onChange={field.onChange}
+                options={[{ value: '', label: 'Select account…' }, ...accountOptions]}
+              />
+            )}
+          />
+        </Field>
+
+        {selectedType === 'transfer' ? (
+          <Field label="To account" error={errors.toAccountId?.message}>
+            <Controller
+              control={control}
+              name="toAccountId"
+              render={({ field }) => (
+                <Select value={field.value ?? ''} onChange={field.onChange}
+                  options={[{ value: '', label: 'Select account…' }, ...accountOptions]}
+                />
+              )}
+            />
+          </Field>
+        ) : (
+          <Field label="Category" error={errors.categoryId?.message}>
+            <Controller
+              control={control}
+              name="categoryId"
+              render={({ field }) => (
+                <Select value={field.value ?? ''} onChange={field.onChange}
+                  options={[{ value: '', label: 'Select category…' }, ...categoryOptions]}
+                />
+              )}
+            />
+          </Field>
+        )}
+
+        <Field label="Payee (optional)">
+          <input {...register('payee')} className={inputCls} placeholder="e.g. Landlord" />
+        </Field>
+
+        <Field label="Repeats">
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+            {INTERVALS.map(({ value, label }) => {
+              const on = selectedInterval === value
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setValue('interval', value)}
+                  className="rounded-2xl py-2.5 font-sans text-[12px] font-bold transition-all"
+                  style={{
+                    background: on ? 'var(--color-brand-500)' : 'var(--bg-surface-2)',
+                    color: on ? '#fff' : 'var(--text-secondary)',
+                    border: on ? 'none' : '1px solid var(--border-subtle)',
+                    boxShadow: on ? 'var(--shadow-glow)' : 'none',
+                  }}
+                >
+                  {label}
+                </button>
+              )
+            })}
+          </div>
+        </Field>
+
+        <Field label="First run on" error={errors.startDate?.message}>
+          <Controller
+            control={control}
+            name="startDate"
+            render={({ field }) => <DatePicker value={field.value} onChange={field.onChange} />}
+          />
+        </Field>
+
+      </div>
+
+      {isEdit && embedded && (
+        <button
+          type="button"
+          onClick={() => setShowDelete(true)}
+          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-[var(--color-overdue)] py-3 font-sans text-[14px] font-bold text-[var(--color-overdue)]"
+        >
+          <Trash2 size={15} strokeWidth={2.4} />
+          Delete rule
+        </button>
+      )}
+
+      <button
+        type="submit"
+        disabled={isSubmitting}
+        className="w-full rounded-2xl font-sans text-[15px] font-extrabold text-white disabled:opacity-60"
+        style={{ height: '52px', background: 'var(--color-brand-500)', boxShadow: 'var(--shadow-glow)' }}
+      >
+        {isSubmitting ? 'Saving…' : isEdit ? 'Save changes' : 'Create rule'}
+      </button>
+    </form>
+  )
+
+  if (embedded) {
+    if (loading) return (
+      <div className="flex items-center justify-center py-10">
+        <div className="h-7 w-7 animate-spin rounded-full border-2 border-[var(--color-brand-500)] border-t-transparent" />
+      </div>
+    )
+    return (
+      <div className="overflow-y-auto px-5 pb-5 pt-1">
+        {formContent}
+        <ConfirmDialog
+          open={showDelete}
+          title="Delete recurring rule?"
+          description="Future transactions won't be created automatically. Existing transactions are not affected."
+          confirmLabel="Delete"
+          onConfirm={handleDelete}
+          onClose={() => setShowDelete(false)}
+          danger
+        />
+      </div>
+    )
   }
 
   if (loading) return (
@@ -176,127 +349,7 @@ export default function RecurringEditor() {
           )}
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
-          <div className="glass-panel rounded-[28px] p-5 flex flex-col gap-5">
-
-            <Field label="Name" error={errors.name?.message}>
-              <input {...register('name')} className={inputCls} placeholder="e.g. Monthly Rent" autoFocus={!isEdit} />
-            </Field>
-
-            {/* Type */}
-            <Field label="Type">
-              <div className="grid grid-cols-3 gap-2">
-                {TX_TYPES.map(({ value, label, color }) => {
-                  const on = selectedType === value
-                  return (
-                    <button
-                      key={value}
-                      type="button"
-                      onClick={() => { setValue('type', value); setValue('categoryId', '') }}
-                      className="rounded-2xl py-2.5 font-sans text-[13px] font-bold transition-all"
-                      style={{
-                        background: on ? color : 'var(--bg-surface-2)',
-                        color: on ? '#fff' : 'var(--text-secondary)',
-                        border: on ? 'none' : '1px solid var(--border-subtle)',
-                      }}
-                    >
-                      {label}
-                    </button>
-                  )
-                })}
-              </div>
-            </Field>
-
-            <Field label="Amount" error={errors.amount?.message}>
-              <input {...register('amount')} type="number" step="0.01" min="0" className={inputCls} placeholder="0" />
-            </Field>
-
-            <Field label="Account" error={errors.accountId?.message}>
-              <Controller
-                control={control}
-                name="accountId"
-                render={({ field }) => (
-                  <Select value={field.value} onChange={field.onChange}
-                    options={[{ value: '', label: 'Select account…' }, ...accountOptions]}
-                  />
-                )}
-              />
-            </Field>
-
-            {selectedType === 'transfer' ? (
-              <Field label="To account" error={errors.toAccountId?.message}>
-                <Controller
-                  control={control}
-                  name="toAccountId"
-                  render={({ field }) => (
-                    <Select value={field.value ?? ''} onChange={field.onChange}
-                      options={[{ value: '', label: 'Select account…' }, ...accountOptions]}
-                    />
-                  )}
-                />
-              </Field>
-            ) : (
-              <Field label="Category" error={errors.categoryId?.message}>
-                <Controller
-                  control={control}
-                  name="categoryId"
-                  render={({ field }) => (
-                    <Select value={field.value ?? ''} onChange={field.onChange}
-                      options={[{ value: '', label: 'Select category…' }, ...categoryOptions]}
-                    />
-                  )}
-                />
-              </Field>
-            )}
-
-            <Field label="Payee (optional)">
-              <input {...register('payee')} className={inputCls} placeholder="e.g. Landlord" />
-            </Field>
-
-            {/* Interval */}
-            <Field label="Repeats">
-              <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-                {INTERVALS.map(({ value, label }) => {
-                  const on = selectedInterval === value
-                  return (
-                    <button
-                      key={value}
-                      type="button"
-                      onClick={() => setValue('interval', value)}
-                      className="rounded-2xl py-2.5 font-sans text-[12px] font-bold transition-all"
-                      style={{
-                        background: on ? 'var(--color-brand-500)' : 'var(--bg-surface-2)',
-                        color: on ? '#fff' : 'var(--text-secondary)',
-                        border: on ? 'none' : '1px solid var(--border-subtle)',
-                        boxShadow: on ? 'var(--shadow-glow)' : 'none',
-                      }}
-                    >
-                      {label}
-                    </button>
-                  )
-                })}
-              </div>
-            </Field>
-
-            <Field label="First run on" error={errors.startDate?.message}>
-              <Controller
-                control={control}
-                name="startDate"
-                render={({ field }) => <DatePicker value={field.value} onChange={field.onChange} />}
-              />
-            </Field>
-
-          </div>
-
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full rounded-2xl font-sans text-[15px] font-extrabold text-white disabled:opacity-60"
-            style={{ height: '52px', background: 'var(--color-brand-500)', boxShadow: 'var(--shadow-glow)' }}
-          >
-            {isSubmitting ? 'Saving…' : isEdit ? 'Save changes' : 'Create rule'}
-          </button>
-        </form>
+        {formContent}
       </div>
 
       <ConfirmDialog

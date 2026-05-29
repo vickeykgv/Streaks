@@ -1,5 +1,4 @@
-import { useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Plus, RefreshCw, Pause, Play, Pencil, CalendarClock } from 'lucide-react'
 import { format } from 'date-fns'
@@ -8,6 +7,8 @@ import { categoriesRepo } from '@/db/repos/spending/categories'
 import { accountsRepo } from '@/db/repos/spending/accounts'
 import { runDueRecurring, intervalLabel } from '@/lib/spending/recurringRunner'
 import { toast } from '@/store/toastStore'
+import { Modal, BottomSheet } from '@/components/ui'
+import RecurringEditor from '@/routes/spending/RecurringEditor'
 
 function formatAmount(n: number, currency: string) {
   return new Intl.NumberFormat('en-IN', { style: 'currency', currency, maximumFractionDigits: 0 }).format(n)
@@ -20,7 +21,22 @@ const TYPE_COLOR: Record<string, string> = {
 }
 
 export default function SpendingRecurring() {
-  const navigate = useNavigate()
+  const [isDesktop, setIsDesktop] = useState(() =>
+    typeof window !== 'undefined' ? window.matchMedia('(min-width: 1024px)').matches : false,
+  )
+  const [editorState, setEditorState] = useState<{ open: boolean; id?: string }>({ open: false })
+
+  useEffect(() => {
+    const media = window.matchMedia('(min-width: 1024px)')
+    const sync = (e?: MediaQueryListEvent) => setIsDesktop(e ? e.matches : media.matches)
+    sync()
+    media.addEventListener('change', sync)
+    return () => media.removeEventListener('change', sync)
+  }, [])
+
+  const openNew  = () => setEditorState({ open: true })
+  const openEdit = (id: string) => setEditorState({ open: true, id })
+  const closeEditor = () => setEditorState({ open: false })
 
   const rules      = useLiveQuery(() => recurringRepo.getAll(), []) ?? []
   const categories = useLiveQuery(() => categoriesRepo.getAll(true), []) ?? []
@@ -75,7 +91,7 @@ export default function SpendingRecurring() {
               Automate repeating transactions like salary, rent, or subscriptions.
             </p>
             <button
-              onClick={() => navigate('/spending/recurring/new')}
+              onClick={openNew}
               className="mt-2 rounded-2xl px-6 py-3 font-sans text-[14px] font-extrabold text-white"
               style={{ background: 'var(--color-brand-500)', boxShadow: 'var(--shadow-glow)' }}
             >
@@ -149,7 +165,7 @@ export default function SpendingRecurring() {
                       {rule.active ? <><Pause size={12} />Pause</> : <><Play size={12} />Resume</>}
                     </button>
                     <button
-                      onClick={() => navigate(`/spending/recurring/edit/${rule.id}`)}
+                      onClick={() => openEdit(rule.id)}
                       className="ml-auto flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--bg-surface-2)]"
                     >
                       <Pencil size={14} color="var(--text-secondary)" />
@@ -164,13 +180,42 @@ export default function SpendingRecurring() {
 
       {/* FAB */}
       <button
-        onClick={() => navigate('/spending/recurring/new')}
+        onClick={openNew}
         className="fixed bottom-40 right-5 z-30 flex h-14 w-14 items-center justify-center rounded-full shadow-lg active:scale-90 transition-transform"
         style={{ background: 'var(--color-brand-500)', boxShadow: 'var(--shadow-glow)' }}
         aria-label="Add recurring rule"
       >
         <Plus size={24} color="white" strokeWidth={2.5} />
       </button>
+
+      {isDesktop ? (
+        <Modal
+          open={editorState.open}
+          onClose={closeEditor}
+          title={editorState.id ? 'Edit Rule' : 'New Recurring Rule'}
+          size="md"
+        >
+          <RecurringEditor
+            embedded
+            initialId={editorState.id}
+            onClose={closeEditor}
+            onSaved={closeEditor}
+          />
+        </Modal>
+      ) : (
+        <BottomSheet
+          open={editorState.open}
+          onClose={closeEditor}
+          title={editorState.id ? 'Edit Rule' : 'New Recurring Rule'}
+        >
+          <RecurringEditor
+            embedded
+            initialId={editorState.id}
+            onClose={closeEditor}
+            onSaved={closeEditor}
+          />
+        </BottomSheet>
+      )}
     </div>
   )
 }

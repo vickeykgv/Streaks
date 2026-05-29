@@ -33,9 +33,22 @@ const PERIODS: { value: BudgetPeriod; label: string }[] = [
   { value: 'custom',  label: 'Custom'  },
 ]
 
-export default function BudgetEditor() {
+interface BudgetEditorProps {
+  embedded?: boolean
+  initialId?: string
+  onClose?: () => void
+  onSaved?: () => void
+}
+
+export default function BudgetEditor({
+  embedded = false,
+  initialId,
+  onClose,
+  onSaved,
+}: BudgetEditorProps = {}) {
   const navigate = useNavigate()
-  const { id } = useParams<{ id?: string }>()
+  const { id: routeId } = useParams<{ id?: string }>()
+  const id = initialId ?? routeId
   const isEdit = !!id
   const [loading, setLoading] = useState(isEdit)
   const [showDelete, setShowDelete] = useState(false)
@@ -55,14 +68,17 @@ export default function BudgetEditor() {
     },
   })
 
-  const selectedPeriod   = watch('period')
-  const selectedCatIds   = watch('categoryIds')
-  const rollover         = watch('rollover')
+  const selectedPeriod = watch('period')
+  const selectedCatIds = watch('categoryIds')
+  const rollover       = watch('rollover')
 
   useEffect(() => {
     if (!isEdit || !id) return
     budgetsRepo.getById(id).then(b => {
-      if (!b) { navigate('/spending/budgets'); return }
+      if (!b) {
+        embedded ? onClose?.() : navigate('/spending/budgets')
+        return
+      }
       reset({
         name:        b.name,
         amount:      b.amount,
@@ -74,11 +90,16 @@ export default function BudgetEditor() {
       })
       setLoading(false)
     })
-  }, [id, isEdit, navigate, reset])
+  }, [id, isEdit, embedded, navigate, onClose, reset])
 
   const toggleCategory = (catId: string) => {
     const cur = selectedCatIds ?? []
     setValue('categoryIds', cur.includes(catId) ? cur.filter(c => c !== catId) : [...cur, catId])
+  }
+
+  const done = () => {
+    if (embedded) { onSaved?.(); onClose?.() }
+    else navigate('/spending/budgets')
   }
 
   const onSubmit = async (data: BudgetFormValues) => {
@@ -99,7 +120,7 @@ export default function BudgetEditor() {
         await budgetsRepo.create(payload)
         toast.success('Budget created')
       }
-      navigate('/spending/budgets')
+      done()
     } catch {
       toast.error('Failed to save budget')
     }
@@ -109,7 +130,156 @@ export default function BudgetEditor() {
     if (!id) return
     await budgetsRepo.delete(id)
     toast.info('Budget deleted', { label: 'Undo', onClick: () => budgetsRepo.restore(id) })
-    navigate('/spending/budgets')
+    done()
+  }
+
+  const formContent = (
+    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
+      <div className={embedded ? 'flex flex-col gap-5' : 'glass-panel rounded-[28px] p-5 flex flex-col gap-5'}>
+
+        <Field label="Budget name" error={errors.name?.message}>
+          <input {...register('name')} className={inputCls} placeholder="e.g. Monthly Groceries" autoFocus={!isEdit} />
+        </Field>
+
+        <Field label="Limit amount" error={errors.amount?.message}>
+          <input {...register('amount')} type="number" step="1" min="0" className={inputCls} placeholder="0" />
+        </Field>
+
+        <Field label="Resets every">
+          <div className="grid grid-cols-4 gap-2">
+            {PERIODS.map(({ value, label }) => {
+              const on = selectedPeriod === value
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setValue('period', value, { shouldValidate: true })}
+                  className="rounded-2xl py-2.5 font-sans text-[12px] font-bold transition-all"
+                  style={{
+                    background: on ? 'var(--color-brand-500)' : 'var(--bg-surface-2)',
+                    color: on ? '#fff' : 'var(--text-secondary)',
+                    border: on ? 'none' : '1px solid var(--border-subtle)',
+                    boxShadow: on ? 'var(--shadow-glow)' : 'none',
+                  }}
+                >
+                  {label}
+                </button>
+              )
+            })}
+          </div>
+        </Field>
+
+        {selectedPeriod === 'custom' && (
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Start date" error={errors.startDate?.message}>
+              <Controller
+                control={control}
+                name="startDate"
+                render={({ field }) => (
+                  <DatePicker value={field.value} onChange={field.onChange} />
+                )}
+              />
+            </Field>
+            <Field label="End date">
+              <Controller
+                control={control}
+                name="endDate"
+                render={({ field }) => (
+                  <DatePicker value={field.value ?? ''} onChange={field.onChange} />
+                )}
+              />
+            </Field>
+          </div>
+        )}
+
+        {categories.length > 0 && (
+          <Field label="Track categories (all if none selected)">
+            <div className="flex flex-wrap gap-2 mt-1">
+              {categories.map(c => {
+                const on = (selectedCatIds ?? []).includes(c.id)
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => toggleCategory(c.id)}
+                    className="flex items-center gap-1.5 rounded-full px-3 py-1.5 font-sans text-[12px] font-bold transition-all"
+                    style={{
+                      background: on ? c.color + '33' : 'var(--bg-surface-2)',
+                      color: on ? c.color : 'var(--text-secondary)',
+                      border: `1.5px solid ${on ? c.color : 'var(--border-subtle)'}`,
+                    }}
+                  >
+                    <span>{c.icon}</span>
+                    {c.name}
+                  </button>
+                )
+              })}
+            </div>
+          </Field>
+        )}
+
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="font-sans text-[14px] font-semibold text-[var(--text-primary)]">Rollover unused budget</p>
+            <p className="font-sans text-[12px] text-[var(--text-tertiary)]">Add leftover to next period</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setValue('rollover', !rollover)}
+            className="relative h-6 w-11 rounded-full transition-colors duration-200"
+            style={{ background: rollover ? 'var(--color-brand-500)' : 'var(--border-subtle)' }}
+          >
+            <span
+              className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all duration-200"
+              style={{ left: rollover ? '22px' : '2px' }}
+            />
+          </button>
+        </div>
+
+      </div>
+
+      {isEdit && embedded && (
+        <button
+          type="button"
+          onClick={() => setShowDelete(true)}
+          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-[var(--color-overdue)] py-3 font-sans text-[14px] font-bold text-[var(--color-overdue)]"
+        >
+          <Trash2 size={15} strokeWidth={2.4} />
+          Delete budget
+        </button>
+      )}
+
+      <button
+        type="submit"
+        disabled={isSubmitting}
+        className="w-full rounded-2xl font-sans text-[15px] font-extrabold text-white disabled:opacity-60"
+        style={{ height: '52px', background: 'var(--color-brand-500)', boxShadow: 'var(--shadow-glow)' }}
+      >
+        {isSubmitting ? 'Saving…' : isEdit ? 'Save changes' : 'Create budget'}
+      </button>
+    </form>
+  )
+
+  if (embedded) {
+    if (loading) return (
+      <div className="flex items-center justify-center py-10">
+        <div className="h-7 w-7 animate-spin rounded-full border-2 border-[var(--color-brand-500)] border-t-transparent" />
+      </div>
+    )
+    return (
+      <div className="overflow-y-auto px-5 pb-5 pt-1">
+        {formContent}
+        <ConfirmDialog
+          open={showDelete}
+          title="Delete budget?"
+          description="This budget will be removed. Your transactions won't be affected."
+          confirmLabel="Delete"
+          onConfirm={handleDelete}
+          onClose={() => setShowDelete(false)}
+          danger
+        />
+      </div>
+    )
   }
 
   if (loading) return (
@@ -122,7 +292,6 @@ export default function BudgetEditor() {
     <div className="min-h-screen bg-app pb-28">
       <div className="mx-auto max-w-2xl px-4 pt-4">
 
-        {/* Header */}
         <div className="flex items-center gap-3 mb-6">
           <button onClick={() => navigate(-1)} className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--bg-surface-2)]">
             <ChevronLeft size={20} color="var(--text-primary)" />
@@ -137,122 +306,7 @@ export default function BudgetEditor() {
           )}
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
-          <div className="glass-panel rounded-[28px] p-5 flex flex-col gap-5">
-
-            <Field label="Budget name" error={errors.name?.message}>
-              <input {...register('name')} className={inputCls} placeholder="e.g. Monthly Groceries" autoFocus={!isEdit} />
-            </Field>
-
-            <Field label="Limit amount" error={errors.amount?.message}>
-              <input {...register('amount')} type="number" step="1" min="0" className={inputCls} placeholder="0" />
-            </Field>
-
-            {/* Period */}
-            <Field label="Resets every">
-              <div className="grid grid-cols-4 gap-2">
-                {PERIODS.map(({ value, label }) => {
-                  const on = selectedPeriod === value
-                  return (
-                    <button
-                      key={value}
-                      type="button"
-                      onClick={() => setValue('period', value, { shouldValidate: true })}
-                      className="rounded-2xl py-2.5 font-sans text-[12px] font-bold transition-all"
-                      style={{
-                        background: on ? 'var(--color-brand-500)' : 'var(--bg-surface-2)',
-                        color: on ? '#fff' : 'var(--text-secondary)',
-                        border: on ? 'none' : '1px solid var(--border-subtle)',
-                        boxShadow: on ? 'var(--shadow-glow)' : 'none',
-                      }}
-                    >
-                      {label}
-                    </button>
-                  )
-                })}
-              </div>
-            </Field>
-
-            {selectedPeriod === 'custom' && (
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Start date" error={errors.startDate?.message}>
-                  <Controller
-                    control={control}
-                    name="startDate"
-                    render={({ field }) => (
-                      <DatePicker value={field.value} onChange={field.onChange} />
-                    )}
-                  />
-                </Field>
-                <Field label="End date">
-                  <Controller
-                    control={control}
-                    name="endDate"
-                    render={({ field }) => (
-                      <DatePicker value={field.value ?? ''} onChange={field.onChange} />
-                    )}
-                  />
-                </Field>
-              </div>
-            )}
-
-            {/* Category filter */}
-            {categories.length > 0 && (
-              <Field label="Track categories (all if none selected)">
-                <div className="flex flex-wrap gap-2 mt-1">
-                  {categories.map(c => {
-                    const on = (selectedCatIds ?? []).includes(c.id)
-                    return (
-                      <button
-                        key={c.id}
-                        type="button"
-                        onClick={() => toggleCategory(c.id)}
-                        className="flex items-center gap-1.5 rounded-full px-3 py-1.5 font-sans text-[12px] font-bold transition-all"
-                        style={{
-                          background: on ? c.color + '33' : 'var(--bg-surface-2)',
-                          color: on ? c.color : 'var(--text-secondary)',
-                          border: `1.5px solid ${on ? c.color : 'var(--border-subtle)'}`,
-                        }}
-                      >
-                        <span>{c.icon}</span>
-                        {c.name}
-                      </button>
-                    )
-                  })}
-                </div>
-              </Field>
-            )}
-
-            {/* Rollover */}
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-sans text-[14px] font-semibold text-[var(--text-primary)]">Rollover unused budget</p>
-                <p className="font-sans text-[12px] text-[var(--text-tertiary)]">Add leftover to next period</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setValue('rollover', !rollover)}
-                className="relative h-6 w-11 rounded-full transition-colors duration-200"
-                style={{ background: rollover ? 'var(--color-brand-500)' : 'var(--border-subtle)' }}
-              >
-                <span
-                  className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all duration-200"
-                  style={{ left: rollover ? '22px' : '2px' }}
-                />
-              </button>
-            </div>
-
-          </div>
-
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full rounded-2xl font-sans text-[15px] font-extrabold text-white disabled:opacity-60"
-            style={{ height: '52px', background: 'var(--color-brand-500)', boxShadow: 'var(--shadow-glow)' }}
-          >
-            {isSubmitting ? 'Saving…' : isEdit ? 'Save changes' : 'Create budget'}
-          </button>
-        </form>
+        {formContent}
       </div>
 
       <ConfirmDialog

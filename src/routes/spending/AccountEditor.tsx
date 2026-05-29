@@ -32,9 +32,22 @@ function Field({ label, error, children }: { label: string; error?: string; chil
 
 const inputCls = 'h-11 w-full rounded-xl border border-[var(--border-subtle)] bg-surface px-3.5 font-sans text-[15px] font-semibold text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--color-brand-500)]'
 
-export default function AccountEditor() {
+interface AccountEditorProps {
+  embedded?: boolean
+  initialId?: string
+  onClose?: () => void
+  onSaved?: () => void
+}
+
+export default function AccountEditor({
+  embedded = false,
+  initialId,
+  onClose,
+  onSaved,
+}: AccountEditorProps = {}) {
   const navigate = useNavigate()
-  const { id } = useParams<{ id?: string }>()
+  const { id: routeId } = useParams<{ id?: string }>()
+  const id = initialId ?? routeId
   const isEdit = !!id
   const [loading, setLoading] = useState(isEdit)
   const [showDelete, setShowDelete] = useState(false)
@@ -51,18 +64,22 @@ export default function AccountEditor() {
     settingsRepo.get<string>('baseCurrency', 'INR').then(setCurrency)
     if (!isEdit) return
     accountsRepo.getById(id).then(acc => {
-      if (!acc) { navigate('/spending/accounts'); return }
+      if (!acc) { embedded ? onClose?.() : navigate('/spending/accounts'); return }
       reset({ name: acc.name, type: acc.type, openingBalance: acc.openingBalance, color: acc.color, icon: acc.icon })
       setLoading(false)
     })
-  }, [id, isEdit, navigate, reset])
+  }, [id, isEdit, embedded, navigate, onClose, reset])
 
-  // Auto-set icon when type changes (only on create)
   useEffect(() => {
     if (isEdit) return
     const t = ACCOUNT_TYPES.find(a => a.value === selectedType)
     if (t) setValue('icon', t.icon)
   }, [selectedType, isEdit, setValue])
+
+  const done = () => {
+    if (embedded) { onSaved?.(); onClose?.() }
+    else navigate('/spending/accounts')
+  }
 
   const onSubmit = async (data: AccountFormValues) => {
     try {
@@ -81,7 +98,7 @@ export default function AccountEditor() {
         })
         toast.success('Account created')
       }
-      navigate('/spending/accounts')
+      done()
     } catch {
       toast.error('Failed to save account')
     }
@@ -90,23 +107,108 @@ export default function AccountEditor() {
   const handleDelete = async () => {
     if (!id) return
     await accountsRepo.delete(id)
-    toast.info('Account deleted', {
-      label: 'Undo',
-      onClick: () => accountsRepo.restore(id),
-    })
-    navigate('/spending/accounts')
+    toast.info('Account deleted', { label: 'Undo', onClick: () => accountsRepo.restore(id) })
+    done()
   }
 
-  if (loading) {
-    return <div className="min-h-screen bg-app flex items-center justify-center">
+  const formContent = (
+    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
+      <div className={embedded ? 'flex flex-col gap-5' : 'glass-panel rounded-[28px] p-5 flex flex-col gap-5'}>
+
+        <Field label="Account name" error={errors.name?.message}>
+          <input {...register('name')} className={inputCls} placeholder="e.g. HDFC Savings" autoFocus />
+        </Field>
+
+        <Field label="Account type">
+          <div className="grid grid-cols-5 gap-1.5">
+            {ACCOUNT_TYPES.map(({ value, label, icon }) => {
+              const on = selectedType === value
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setValue('type', value, { shouldValidate: true })}
+                  className="flex flex-col items-center gap-1.5 rounded-2xl py-3 transition-all"
+                  style={{
+                    background: on ? 'var(--color-brand-500)' : 'var(--bg-surface-2)',
+                    border: on ? 'none' : '1px solid var(--border-subtle)',
+                  }}
+                >
+                  <span className="text-[20px]">{icon}</span>
+                  <span className="font-sans text-[10px] font-bold" style={{ color: on ? '#fff' : 'var(--text-secondary)' }}>{label}</span>
+                </button>
+              )
+            })}
+          </div>
+        </Field>
+
+        <Field label={`Opening balance (${currency})`} error={errors.openingBalance?.message}>
+          <input type="number" step="0.01" {...register('openingBalance')} className={inputCls} placeholder="0.00" />
+        </Field>
+
+        <Field label="Colour">
+          <Controller
+            control={control}
+            name="color"
+            render={({ field }) => <ColorPicker value={field.value} onChange={field.onChange} />}
+          />
+        </Field>
+
+      </div>
+
+      {isEdit && embedded && (
+        <button
+          type="button"
+          onClick={() => setShowDelete(true)}
+          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-[var(--color-overdue)] py-3 font-sans text-[14px] font-bold text-[var(--color-overdue)]"
+        >
+          <Trash2 size={15} strokeWidth={2.4} />
+          Delete account
+        </button>
+      )}
+
+      <button
+        type="submit"
+        disabled={isSubmitting}
+        className="w-full rounded-2xl font-sans text-[15px] font-extrabold text-[var(--text-on-brand)] disabled:opacity-60"
+        style={{ background: 'var(--color-brand-500)', boxShadow: 'var(--shadow-glow)', height: '52px' }}
+      >
+        {isSubmitting ? 'Saving…' : isEdit ? 'Save changes' : 'Create account'}
+      </button>
+    </form>
+  )
+
+  if (embedded) {
+    if (loading) return (
+      <div className="flex items-center justify-center py-10">
+        <div className="h-7 w-7 animate-spin rounded-full border-2 border-[var(--color-brand-500)] border-t-transparent" />
+      </div>
+    )
+    return (
+      <div className="overflow-y-auto px-5 pb-5 pt-1">
+        {formContent}
+        <ConfirmDialog
+          open={showDelete}
+          title="Delete account?"
+          description="This removes the account permanently. Transactions linked to it will remain."
+          confirmLabel="Delete"
+          onConfirm={handleDelete}
+          onClose={() => setShowDelete(false)}
+          danger
+        />
+      </div>
+    )
+  }
+
+  if (loading) return (
+    <div className="min-h-screen bg-app flex items-center justify-center">
       <div className="h-7 w-7 animate-spin rounded-full border-2 border-[var(--color-brand-500)] border-t-transparent" />
     </div>
-  }
+  )
 
   return (
     <div className="min-h-screen bg-app pb-28">
       <div className="mx-auto max-w-2xl px-4 pt-4">
-        {/* Header */}
         <div className="flex items-center gap-3 mb-6">
           <button onClick={() => navigate(-1)} className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--bg-surface-2)]">
             <ChevronLeft size={20} color="var(--text-primary)" />
@@ -121,65 +223,7 @@ export default function AccountEditor() {
           )}
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
-          <div className="glass-panel rounded-[28px] p-5 flex flex-col gap-5">
-
-            <Field label="Account name" error={errors.name?.message}>
-              <input {...register('name')} className={inputCls} placeholder="e.g. HDFC Savings" autoFocus />
-            </Field>
-
-            <Field label="Account type">
-              <div className="grid grid-cols-5 gap-1.5">
-                {ACCOUNT_TYPES.map(({ value, label, icon }) => {
-                  const on = selectedType === value
-                  return (
-                    <button
-                      key={value}
-                      type="button"
-                      onClick={() => setValue('type', value, { shouldValidate: true })}
-                      className="flex flex-col items-center gap-1.5 rounded-2xl py-3 transition-all"
-                      style={{
-                        background: on ? 'var(--color-brand-500)' : 'var(--bg-surface-2)',
-                        border: on ? 'none' : '1px solid var(--border-subtle)',
-                      }}
-                    >
-                      <span className="text-[20px]">{icon}</span>
-                      <span className="font-sans text-[10px] font-bold" style={{ color: on ? '#fff' : 'var(--text-secondary)' }}>{label}</span>
-                    </button>
-                  )
-                })}
-              </div>
-            </Field>
-
-            <Field label={`Opening balance (${currency})`} error={errors.openingBalance?.message}>
-              <input
-                type="number"
-                step="0.01"
-                {...register('openingBalance')}
-                className={inputCls}
-                placeholder="0.00"
-              />
-            </Field>
-
-            <Field label="Colour">
-              <Controller
-                control={control}
-                name="color"
-                render={({ field }) => <ColorPicker value={field.value} onChange={field.onChange} />}
-              />
-            </Field>
-
-          </div>
-
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="h-13 w-full rounded-2xl font-sans text-[15px] font-extrabold text-[var(--text-on-brand)] disabled:opacity-60"
-            style={{ background: 'var(--color-brand-500)', boxShadow: 'var(--shadow-glow)', height: '52px' }}
-          >
-            {isSubmitting ? 'Saving…' : isEdit ? 'Save changes' : 'Create account'}
-          </button>
-        </form>
+        {formContent}
       </div>
 
       <ConfirmDialog

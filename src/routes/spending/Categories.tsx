@@ -1,9 +1,10 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Plus, ChevronRight, Tag } from 'lucide-react'
 import { categoriesRepo } from '@/db/repos/spending/categories'
 import { transactionsRepo } from '@/db/repos/spending/transactions'
+import { Modal, BottomSheet } from '@/components/ui'
+import CategoryEditor from '@/routes/spending/CategoryEditor'
 import { cn } from '@/lib/utils'
 import type { CategoryType, SpendingCategory } from '@/types/spending'
 
@@ -103,8 +104,23 @@ function CategoryRow({
 }
 
 export default function SpendingCategories() {
-  const navigate = useNavigate()
   const [tab, setTab] = useState<Tab>('expense')
+  const [isDesktop, setIsDesktop] = useState(() =>
+    typeof window !== 'undefined' ? window.matchMedia('(min-width: 1024px)').matches : false,
+  )
+  const [editorState, setEditorState] = useState<{ open: boolean; id?: string; type?: CategoryType }>({ open: false })
+
+  useEffect(() => {
+    const media = window.matchMedia('(min-width: 1024px)')
+    const sync = (e?: MediaQueryListEvent) => setIsDesktop(e ? e.matches : media.matches)
+    sync()
+    media.addEventListener('change', sync)
+    return () => media.removeEventListener('change', sync)
+  }, [])
+
+  const openNew  = (type: CategoryType) => setEditorState({ open: true, type })
+  const openEdit = (id: string) => setEditorState({ open: true, id })
+  const closeEditor = () => setEditorState({ open: false })
 
   const allCategories = useLiveQuery(() => categoriesRepo.getAll(), []) ?? []
   const txCounts = useCategoryStats()
@@ -186,7 +202,7 @@ export default function SpendingCategories() {
                 cat={cat}
                 children={childMap[cat.id]}
                 txCount={txCounts[cat.id] ?? 0}
-                onEdit={id => navigate(`/spending/categories/edit/${id}`)}
+                onEdit={openEdit}
               />
             ))}
           </div>
@@ -195,13 +211,44 @@ export default function SpendingCategories() {
 
       {/* FAB */}
       <button
-        onClick={() => navigate(`/spending/categories/new?type=${tab}`)}
+        onClick={() => openNew(tab)}
         className="fixed bottom-40 right-5 flex h-14 w-14 items-center justify-center rounded-full shadow-[var(--shadow-fab)] z-10"
         style={{ background: 'var(--color-brand-500)' }}
         aria-label="Add category"
       >
         <Plus size={24} strokeWidth={2.5} color="#fff" />
       </button>
+
+      {isDesktop ? (
+        <Modal
+          open={editorState.open}
+          onClose={closeEditor}
+          title={editorState.id ? 'Edit Category' : 'New Category'}
+          size="md"
+        >
+          <CategoryEditor
+            embedded
+            initialId={editorState.id}
+            initialType={editorState.type}
+            onClose={closeEditor}
+            onSaved={closeEditor}
+          />
+        </Modal>
+      ) : (
+        <BottomSheet
+          open={editorState.open}
+          onClose={closeEditor}
+          title={editorState.id ? 'Edit Category' : 'New Category'}
+        >
+          <CategoryEditor
+            embedded
+            initialId={editorState.id}
+            initialType={editorState.type}
+            onClose={closeEditor}
+            onSaved={closeEditor}
+          />
+        </BottomSheet>
+      )}
     </div>
   )
 }

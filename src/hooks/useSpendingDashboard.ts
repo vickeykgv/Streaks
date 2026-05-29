@@ -1,9 +1,18 @@
 import { useMemo } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns'
+import {
+  differenceInCalendarDays,
+  format,
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
+} from 'date-fns'
 import { transactionsRepo } from '@/db/repos/spending/transactions'
 import { accountsRepo } from '@/db/repos/spending/accounts'
 import { categoriesRepo } from '@/db/repos/spending/categories'
+import { budgetsRepo } from '@/db/repos/spending/budgets'
+import { computeBudgetProgress } from '@/lib/spending/budgets'
 
 export type SpendingPeriod = 'month' | 'week'
 
@@ -26,6 +35,7 @@ export function useSpendingDashboard(period: SpendingPeriod) {
   const allTxns     = useLiveQuery(() => transactionsRepo.getAll(), []) ?? []
   const accounts    = useLiveQuery(() => accountsRepo.getAll(), []) ?? []
   const categories  = useLiveQuery(() => categoriesRepo.getAll(true), []) ?? []
+  const budgets     = useLiveQuery(() => budgetsRepo.getAll(), []) ?? []
 
   const isLoading = periodTxns === undefined || accounts === undefined
 
@@ -68,12 +78,37 @@ export function useSpendingDashboard(period: SpendingPeriod) {
   // ── Recent 5 transactions in the period ────────────────────────────────────
   const recentTransactions = [...periodTxns]
     .sort((a, b) => b.date !== a.date ? b.date.localeCompare(a.date) : b.createdAt - a.createdAt)
-    .slice(0, 5)
+    .slice(0, 8)
 
   // ── Biggest single expense ─────────────────────────────────────────────────
   const biggestExpense = periodTxns
     .filter(t => t.type === 'expense')
     .sort((a, b) => b.amount - a.amount)[0] ?? null
+
+  const budgetProgresses = budgets.map(b => computeBudgetProgress(b, allTxns))
+
+  // Period-matched budgets for the metric cards (Budget Used %)
+  const activeBudgetProgresses = budgetProgresses.filter(p =>
+    p.budget.period === (period === 'week' ? 'weekly' : 'monthly'),
+  )
+  const totalBudget = activeBudgetProgresses.reduce((sum, item) => sum + item.budget.amount, 0)
+  const totalBudgetSpent = activeBudgetProgresses.reduce((sum, item) => sum + item.spent, 0)
+
+  // All budgets sorted by risk for the health panel and alerts
+  const allBudgetProgresses = [...budgetProgresses].sort((a, b) => b.pct - a.pct)
+  const overBudgetCount = allBudgetProgresses.filter(item => item.pct >= 100).length
+  const nearLimitCount = allBudgetProgresses.filter(item => item.pct >= 80 && item.pct < 100).length
+  const totalDaysInPeriod = Math.max(1, differenceInCalendarDays(new Date(endDate), new Date(startDate)) + 1)
+  const elapsedDays = Math.min(
+    totalDaysInPeriod,
+    Math.max(1, differenceInCalendarDays(new Date(), new Date(startDate)) + 1),
+  )
+  const avgDailyExpense = totalExpense / elapsedDays
+  const projectedExpense = avgDailyExpense * totalDaysInPeriod
+  const spendingPacePct = totalBudget > 0 ? (totalBudgetSpent / totalBudget) * 100 : 0
+  const timeProgressPct = (elapsedDays / totalDaysInPeriod) * 100
+  const savingsRate = totalIncome > 0 ? ((totalIncome - totalExpense) / totalIncome) * 100 : null
+  const topSpendCategory = topCategories[0] ?? null
 
   const categoryMap: Record<string, { name: string; icon: string; color: string }> = {}
   for (const c of categories) categoryMap[c.id] = { name: c.name, icon: c.icon, color: c.color }
@@ -89,8 +124,22 @@ export function useSpendingDashboard(period: SpendingPeriod) {
     accountBalances,
     recentTransactions,
     biggestExpense,
+    topSpendCategory,
     categoryMap,
     accountMap,
+    activeBudgetProgresses,
+    allBudgetProgresses,
+    totalBudget,
+    totalBudgetSpent,
+    overBudgetCount,
+    nearLimitCount,
+    avgDailyExpense,
+    projectedExpense,
+    spendingPacePct,
+    timeProgressPct,
+    savingsRate,
+    elapsedDays,
+    totalDaysInPeriod,
     isLoading,
     transactionCount: periodTxns.length,
     startDate,

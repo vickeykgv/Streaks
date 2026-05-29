@@ -31,7 +31,10 @@ body::before {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  background: none;
+  background:
+    radial-gradient(circle at top left, rgba(229, 9, 20, 0.12), transparent 28%),
+    radial-gradient(circle at top right, rgba(59, 130, 246, 0.08), transparent 24%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.015), transparent 22%);
   z-index: -1;
 }
 
@@ -85,4 +88,15 @@ body::before {
   border: 1px solid var(--border-subtle);
   box-shadow: var(--shadow-lg);
   backdrop-filter: blur(14px);
+}
+
+.desktop-finance-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 1280px) {
+  .desktop-finance-grid {
+    grid-template-columns: minmax(0, 1.5fr) 360px;
+  }
 }
