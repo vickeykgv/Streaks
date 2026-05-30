@@ -1,11 +1,14 @@
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Plus, AlertTriangle } from 'lucide-react'
+import { AlertTriangle } from 'lucide-react'
 import { useMoto } from '@/store/moto'
 import { issuesRepo } from '@/db/repos/moto/issues'
 import { openMotoEditor } from '@/store/motoEditor'
 import { VehicleSwitcher } from '@/components/moto/VehicleSwitcher'
 import { EmptyState } from '@/components/ui'
+import { DesktopPageHeader } from '@/components/DesktopPageHeader'
+import { ActionDropdown } from '@/components/ActionDropdown'
+import { useMotoActions } from '@/hooks/useMotoActions'
 import { format, parseISO } from 'date-fns'
 import type { MotoIssue, IssuePriority } from '@/types/moto'
 
@@ -69,6 +72,7 @@ function IssueCard({ issue }: { issue: MotoIssue }) {
 
 export default function MotoIssues() {
   const { activeVehicleId } = useMoto()
+  const motoActions = useMotoActions('issue')
   const [showResolved, setShowResolved] = useState(false)
 
   const openIssues = useLiveQuery(
@@ -82,7 +86,9 @@ export default function MotoIssues() {
   ) ?? []
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-6 pb-28">
+    <div className="min-h-screen bg-app">
+      <DesktopPageHeader action={<ActionDropdown items={motoActions} />} />
+      <div className="mx-auto w-full max-w-3xl px-4 py-6 pb-28">
       <VehicleSwitcher />
 
       {!activeVehicleId && (
@@ -132,16 +138,7 @@ export default function MotoIssues() {
         </>
       )}
 
-      {activeVehicleId && (
-        <button
-          onClick={() => openMotoEditor({ kind: 'issue', vehicleId: activeVehicleId })}
-          className="fixed bottom-24 right-5 flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition-transform active:scale-95 md:bottom-8"
-          style={{ background: 'var(--color-brand-500)', boxShadow: 'var(--shadow-glow)' }}
-          aria-label="Report issue"
-        >
-          <Plus size={24} color="white" strokeWidth={2.5} />
-        </button>
-      )}
+      </div>
     </div>
   )
 }

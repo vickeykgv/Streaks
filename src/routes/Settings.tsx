@@ -12,6 +12,7 @@ import { categoriesRepo } from '@/db/repos/spending/categories'
 import { accountsRepo } from '@/db/repos/spending/accounts'
 import { TimePicker } from '@/components/ui'
 import { isAppBadgeSupported } from '@/lib/appBadge'
+import { DesktopPageHeader } from '@/components/DesktopPageHeader'
 import type { UnitSystem } from '@/types/moto'
 
 function SettingRow({ icon, label, description, right, onClick }: {
@@ -173,6 +174,7 @@ export default function Settings() {
   return (
     <>
     <div className="min-h-screen bg-app pb-28">
+      <DesktopPageHeader />
       <div className="mx-auto max-w-3xl px-4 pt-4">
         <div className="hero-panel rounded-[30px] px-5 py-5">
           <div className="section-kicker mb-2">Control room</div>

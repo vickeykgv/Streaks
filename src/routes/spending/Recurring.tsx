@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Plus, RefreshCw, Pause, Play, Pencil, CalendarClock } from 'lucide-react'
+import { Plus, RefreshCw, Pause, Play, Pencil, CalendarClock, ArrowLeftRight, Wallet, Target, Tag } from 'lucide-react'
 import { format } from 'date-fns'
 import { recurringRepo } from '@/db/repos/spending/recurring'
 import { categoriesRepo } from '@/db/repos/spending/categories'
@@ -8,7 +9,10 @@ import { accountsRepo } from '@/db/repos/spending/accounts'
 import { runDueRecurring, intervalLabel } from '@/lib/spending/recurringRunner'
 import { toast } from '@/store/toastStore'
 import { Modal, BottomSheet } from '@/components/ui'
+import { DesktopPageHeader } from '@/components/DesktopPageHeader'
+import { ActionDropdown } from '@/components/ActionDropdown'
 import RecurringEditor from '@/routes/spending/RecurringEditor'
+import { openSpendingEditor } from '@/store/spendingEditor'
 
 function formatAmount(n: number, currency: string) {
   return new Intl.NumberFormat('en-IN', { style: 'currency', currency, maximumFractionDigits: 0 }).format(n)
@@ -21,6 +25,7 @@ const TYPE_COLOR: Record<string, string> = {
 }
 
 export default function SpendingRecurring() {
+  const navigate = useNavigate()
   const [isDesktop, setIsDesktop] = useState(() =>
     typeof window !== 'undefined' ? window.matchMedia('(min-width: 1024px)').matches : false,
   )
@@ -66,8 +71,17 @@ export default function SpendingRecurring() {
     if (n > 0) toast.success('Transaction created')
   }
 
+  const spendingActions = [
+    { label: 'Recurring',   icon: <CalendarClock size={14} strokeWidth={2.5} />,  onClick: openNew },
+    { label: 'Transaction', icon: <ArrowLeftRight size={14} strokeWidth={2.5} />, onClick: () => openSpendingEditor({ kind: 'transaction', type: 'expense' }) },
+    { label: 'Account',     icon: <Wallet size={14} strokeWidth={2.5} />,         onClick: () => navigate('/spending/accounts') },
+    { label: 'Budget',      icon: <Target size={14} strokeWidth={2.5} />,         onClick: () => navigate('/spending/budgets') },
+    { label: 'Category',    icon: <Tag size={14} strokeWidth={2.5} />,            onClick: () => navigate('/spending/categories') },
+  ]
+
   return (
     <div className="min-h-screen bg-app pb-28">
+      <DesktopPageHeader action={<ActionDropdown items={spendingActions} />} />
       <div className="mx-auto max-w-3xl px-4 pt-4">
 
         {/* Header */}

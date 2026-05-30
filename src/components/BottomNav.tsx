@@ -1,7 +1,6 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 import { Home, List, Calendar, BarChart2, Settings, Wallet, ArrowLeftRight, Building2, Target, Bike, Car, Fuel, Wrench } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useModule } from '@/store/module'
 import { ModuleSwitcher } from '@/components/ModuleSwitcher'
 
 const habitsItems = [
@@ -29,7 +28,11 @@ const motoItems = [
 ]
 
 export function BottomNav() {
-  const { activeModule } = useModule()
+  const { pathname } = useLocation()
+  const activeModule =
+    pathname.startsWith('/moto')     ? 'moto' :
+    pathname.startsWith('/spending') ? 'spending' :
+    'habits'
   const items =
     activeModule === 'habits'   ? habitsItems   :
     activeModule === 'spending' ? spendingItems :

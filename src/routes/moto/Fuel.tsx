@@ -1,11 +1,14 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Plus, Fuel, Droplets } from 'lucide-react'
+import { Fuel, Droplets } from 'lucide-react'
 import { useMoto } from '@/store/moto'
 import { fuelLogsRepo } from '@/db/repos/moto/fuelLogs'
 import { openMotoEditor } from '@/store/motoEditor'
 import { computeFuelEfficiency } from '@/lib/moto/fuelEfficiency'
 import { VehicleSwitcher } from '@/components/moto/VehicleSwitcher'
 import { EmptyState } from '@/components/ui'
+import { DesktopPageHeader } from '@/components/DesktopPageHeader'
+import { ActionDropdown } from '@/components/ActionDropdown'
+import { useMotoActions } from '@/hooks/useMotoActions'
 import { format, parseISO, startOfMonth, endOfMonth } from 'date-fns'
 import type { MotoFuelLog } from '@/types/moto'
 
@@ -73,6 +76,7 @@ function FuelRow({ log, kmpl }: { log: MotoFuelLog; kmpl?: number }) {
 
 export default function MotoFuel() {
   const { activeVehicleId } = useMoto()
+  const motoActions = useMotoActions('fuel')
 
   const logs = useLiveQuery(
     () => activeVehicleId ? fuelLogsRepo.getAllForVehicle(activeVehicleId) : Promise.resolve([]),
@@ -93,7 +97,9 @@ export default function MotoFuel() {
   const latestKmpl = efficiencySeries.length > 0 ? efficiencySeries[efficiencySeries.length - 1].kmpl : null
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-6 pb-28">
+    <div className="min-h-screen bg-app">
+      <DesktopPageHeader action={<ActionDropdown items={motoActions} />} />
+      <div className="mx-auto w-full max-w-3xl px-4 py-6 pb-28">
       <VehicleSwitcher />
 
       {activeVehicleId && logs.length > 0 && (
@@ -135,16 +141,7 @@ export default function MotoFuel() {
         </div>
       )}
 
-      {activeVehicleId && (
-        <button
-          onClick={() => openMotoEditor({ kind: 'fuel', vehicleId: activeVehicleId })}
-          className="fixed bottom-24 right-5 flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition-transform active:scale-95 md:bottom-8"
-          style={{ background: 'var(--color-brand-500)', boxShadow: 'var(--shadow-glow)' }}
-          aria-label="Log fuel fill"
-        >
-          <Plus size={24} color="white" strokeWidth={2.5} />
-        </button>
-      )}
+      </div>
     </div>
   )
 }

@@ -1,12 +1,16 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Plus, Building2, ChevronRight, Wallet, CreditCard, PiggyBank, TrendingUp, TrendingDown } from 'lucide-react'
+import { Plus, Building2, ChevronRight, Wallet, CreditCard, PiggyBank, TrendingUp, TrendingDown, ArrowLeftRight, Target, Tag, CalendarClock } from 'lucide-react'
 import { accountsRepo } from '@/db/repos/spending/accounts'
 import { transactionsRepo } from '@/db/repos/spending/transactions'
 import { settingsRepo } from '@/db/repos/settings'
 import { Modal, BottomSheet } from '@/components/ui'
+import { DesktopPageHeader } from '@/components/DesktopPageHeader'
+import { ActionDropdown } from '@/components/ActionDropdown'
 import AccountEditor from '@/routes/spending/AccountEditor'
 import { cn } from '@/lib/utils'
+import { openSpendingEditor } from '@/store/spendingEditor'
 import type { SpendingAccount } from '@/types/spending'
 
 function formatAmount(n: number, currency: string) {
@@ -44,6 +48,7 @@ const ACCOUNT_TYPE_ICON: Record<string, React.ReactNode> = {
 }
 
 export default function SpendingAccounts() {
+  const navigate = useNavigate()
   const [currency, setCurrency] = useState('INR')
   const [isDesktop, setIsDesktop] = useState(() =>
     typeof window !== 'undefined' ? window.matchMedia('(min-width: 1024px)').matches : false,
@@ -77,8 +82,17 @@ export default function SpendingAccounts() {
     return b < 0 ? sum + Math.abs(b) : sum
   }, 0)
 
+  const spendingActions = [
+    { label: 'Account',     icon: <Wallet size={14} strokeWidth={2.5} />,         onClick: openNew },
+    { label: 'Transaction', icon: <ArrowLeftRight size={14} strokeWidth={2.5} />, onClick: () => openSpendingEditor({ kind: 'transaction', type: 'expense' }) },
+    { label: 'Budget',      icon: <Target size={14} strokeWidth={2.5} />,         onClick: () => navigate('/spending/budgets') },
+    { label: 'Category',    icon: <Tag size={14} strokeWidth={2.5} />,            onClick: () => navigate('/spending/categories') },
+    { label: 'Recurring',   icon: <CalendarClock size={14} strokeWidth={2.5} />,  onClick: () => navigate('/spending/recurring') },
+  ]
+
   return (
     <div className="min-h-screen bg-app pb-28">
+      <DesktopPageHeader action={<ActionDropdown items={spendingActions} />} />
       <div className="w-full px-4 pt-4 pb-6 lg:px-6">
 
         {/* Hero */}
@@ -116,13 +130,6 @@ export default function SpendingAccounts() {
             </div>
           )}
 
-          <button
-            onClick={() => openNew()}
-            className="hidden lg:flex items-center gap-2 rounded-2xl px-5 h-11 font-sans text-[14px] font-extrabold text-white shrink-0"
-            style={{ background: 'var(--color-brand-500)', boxShadow: 'var(--shadow-glow)' }}
-          >
-            <Plus size={16} strokeWidth={2.5} /> Add account
-          </button>
         </div>
 
         {/* Content */}

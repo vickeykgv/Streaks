@@ -1,4 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { DesktopPageHeader } from '@/components/DesktopPageHeader'
+import { ActionDropdown } from '@/components/ActionDropdown'
+import { FabMenu } from '@/components/FabMenu'
 import { useNavigate } from 'react-router-dom'
 import {
   Plus,
@@ -12,15 +15,17 @@ import {
   Sparkles,
   Landmark,
   AlertTriangle,
+  Tag,
+  RefreshCw,
 } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { PieChart, Pie, Cell } from 'recharts'
 import { seedDefaultCategories } from '@/db/repos/spending/seed'
 import { settingsRepo } from '@/db/repos/settings'
 import { useSpendingDashboard, type SpendingPeriod } from '@/hooks/useSpendingDashboard'
-import { BottomSheet, Modal, ProgressBar } from '@/components/ui'
+import { ProgressBar } from '@/components/ui'
 import { CardSkeleton, HeroPanelSkeleton, StatsSkeleton } from '@/components/SpendingSkeleton'
-import TransactionEditor from '@/routes/spending/TransactionEditor'
+import { openSpendingEditor } from '@/store/spendingEditor'
 import type { TransactionType } from '@/types/spending'
 
 function formatAmount(n: number, currency: string) {
@@ -121,22 +126,9 @@ export default function SpendingDashboard() {
     (localStorage.getItem('spending-period') as SpendingPeriod) ?? 'month',
   )
   const [currency, setCurrency] = useState('INR')
-  const [isDesktop, setIsDesktop] = useState(() =>
-    typeof window !== 'undefined' ? window.matchMedia('(min-width: 1024px)').matches : false,
-  )
-  const [editorState, setEditorState] = useState<{ open: boolean; id?: string; type?: TransactionType; categoryId?: string }>({ open: false })
-
   useEffect(() => {
     seedDefaultCategories()
     settingsRepo.get<string>('baseCurrency', 'INR').then(setCurrency)
-  }, [])
-
-  useEffect(() => {
-    const media = window.matchMedia('(min-width: 1024px)')
-    const sync = (event?: MediaQueryListEvent) => setIsDesktop(event ? event.matches : media.matches)
-    sync()
-    media.addEventListener('change', sync)
-    return () => media.removeEventListener('change', sync)
   }, [])
 
   const handlePeriodChange = (p: SpendingPeriod) => {
@@ -170,12 +162,28 @@ export default function SpendingDashboard() {
   } = useSpendingDashboard(period)
 
   const budgetPct = totalBudget > 0 ? Math.min(100, (totalBudgetSpent / totalBudget) * 100) : 0
-  const openCreateModal = (type: TransactionType, categoryId?: string) => setEditorState({ open: true, type, categoryId })
-  const openEditModal = (id: string) => setEditorState({ open: true, id })
-  const closeEditor = () => setEditorState({ open: false })
+  const openCreateModal = (type: TransactionType, categoryId?: string) => openSpendingEditor({ kind: 'transaction', type, categoryId })
+  const openEditModal = (id: string) => openSpendingEditor({ kind: 'transaction', id })
+
+  const spendingActions = [
+    { label: 'Transaction', icon: <ArrowLeftRight size={14} strokeWidth={2.5} />, onClick: () => openCreateModal('expense') },
+    { label: 'Account',     icon: <Landmark size={14} strokeWidth={2.5} />,       onClick: () => navigate('/spending/accounts') },
+    { label: 'Budget',      icon: <Target size={14} strokeWidth={2.5} />,         onClick: () => navigate('/spending/budgets') },
+    { label: 'Category',    icon: <Tag size={14} strokeWidth={2.5} />,            onClick: () => navigate('/spending/categories') },
+    { label: 'Recurring',   icon: <CalendarClock size={14} strokeWidth={2.5} />,  onClick: () => navigate('/spending/recurring') },
+  ]
+
+  const fabItems = [
+    { label: 'Transaction', description: 'Log income or expense', icon: <ArrowLeftRight size={22} strokeWidth={1.6} />, onClick: () => openCreateModal('expense'), color: 'var(--color-brand-500)' },
+    { label: 'Account',     description: 'Cash, bank, wallet',    icon: <Landmark size={22} strokeWidth={1.6} />,       onClick: () => navigate('/spending/accounts'), color: '#3b82f6' },
+    { label: 'Budget',      description: 'Set a spending limit',  icon: <Target size={22} strokeWidth={1.6} />,         onClick: () => navigate('/spending/budgets'),  color: '#10b981' },
+    { label: 'Category',    description: 'Income or expense type', icon: <Tag size={22} strokeWidth={1.6} />,           onClick: () => navigate('/spending/categories'), color: '#f97316' },
+    { label: 'Recurring',   description: 'Auto-log subscriptions', icon: <RefreshCw size={22} strokeWidth={1.6} />,     onClick: () => navigate('/spending/recurring'),  color: '#8b5cf6' },
+  ]
 
   return (
     <div className="min-h-screen bg-app pb-28">
+      <DesktopPageHeader action={<ActionDropdown items={spendingActions} />} />
       <div className="w-full px-4 pt-4 pb-6 lg:px-6">
         {isLoading ? (
           <div className="flex flex-col gap-4">
@@ -577,44 +585,7 @@ export default function SpendingDashboard() {
         )}
       </div>
 
-      {/* Mobile FAB */}
-      <button
-        onClick={() => openCreateModal('expense')}
-        className="fixed bottom-40 right-5 z-10 flex h-14 w-14 items-center justify-center rounded-full shadow-[var(--shadow-fab)] lg:hidden"
-        style={{ background: 'var(--color-brand-500)' }}
-        aria-label="Add transaction"
-      >
-        <Plus size={24} strokeWidth={2.5} color="#fff" />
-      </button>
-
-      {isDesktop ? (
-        <Modal
-          open={editorState.open}
-          onClose={closeEditor}
-          title={editorState.id ? 'Edit Transaction' : 'Add Transaction'}
-          size="lg"
-        >
-          <TransactionEditor
-            embedded
-            initialId={editorState.id}
-            initialType={editorState.type}
-            initialCategoryId={editorState.categoryId}
-            onClose={closeEditor}
-            onSaved={closeEditor}
-          />
-        </Modal>
-      ) : (
-        <BottomSheet open={editorState.open} onClose={closeEditor} title={editorState.id ? 'Edit Transaction' : 'Add Transaction'}>
-          <TransactionEditor
-            embedded
-            initialId={editorState.id}
-            initialType={editorState.type}
-            initialCategoryId={editorState.categoryId}
-            onClose={closeEditor}
-            onSaved={closeEditor}
-          />
-        </BottomSheet>
-      )}
+      <FabMenu items={fabItems} title="Add to spending" />
     </div>
   )
 }

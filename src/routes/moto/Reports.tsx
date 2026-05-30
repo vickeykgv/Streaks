@@ -12,6 +12,7 @@ import { servicesRepo } from '@/db/repos/moto/services'
 import { partsRepo } from '@/db/repos/moto/parts'
 import { VehicleSwitcher } from '@/components/moto/VehicleSwitcher'
 import { EmptyState } from '@/components/ui'
+import { DesktopPageHeader } from '@/components/DesktopPageHeader'
 import {
   computeMotoReportData,
   motoReportPeriodLabel,
@@ -80,7 +81,9 @@ export default function MotoReports() {
   const isEmpty = fuelLogs.length === 0 && services.length === 0 && parts.length === 0
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-6 pb-28">
+    <div className="min-h-screen bg-app">
+      <DesktopPageHeader />
+      <div className="mx-auto w-full max-w-3xl px-4 py-6 pb-28">
       <VehicleSwitcher />
 
       {/* Period selector */}
@@ -329,6 +332,7 @@ export default function MotoReports() {
 
         </div>
       )}
+      </div>
     </div>
   )
 }

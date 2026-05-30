@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { format, parseISO } from 'date-fns'
 import {
-  Plus, Bike, Droplets, Wrench, AlertTriangle, FileText,
+  Bike, Droplets, Wrench, AlertTriangle, FileText,
   CheckCircle2, Cog, TrendingUp, Gauge,
 } from 'lucide-react'
 import {
@@ -15,6 +15,9 @@ import { VehicleSnapshotCard } from '@/components/moto/cards/VehicleSnapshotCard
 import { OpenIssuesCard } from '@/components/moto/cards/OpenIssuesCard'
 import { ExpiringDocsCard } from '@/components/moto/cards/ExpiringDocsCard'
 import { EmptyState } from '@/components/ui'
+import { DesktopPageHeader } from '@/components/DesktopPageHeader'
+import { ActionDropdown } from '@/components/ActionDropdown'
+import { useMotoActions } from '@/hooks/useMotoActions'
 import { cn } from '@/lib/utils'
 
 const SERVICE_TYPE_LABEL: Record<string, string> = {
@@ -279,6 +282,7 @@ function PartsDueSection({ partsDue, vehicleId }: { partsDue: PartDueItem[]; veh
 export default function MotoDashboard() {
   const navigate    = useNavigate()
   const { activeVehicleId } = useMoto()
+  const motoActions = useMotoActions(activeVehicleId ? 'fuel' : 'vehicle')
 
   const {
     vehicle,
@@ -289,14 +293,16 @@ export default function MotoDashboard() {
     isLoading,
   } = useMotoDashboard(activeVehicleId)
 
+
   // ── No vehicle ──────────────────────────────────────────────────────────────
   if (!activeVehicleId) {
     return (
       <div className="min-h-screen bg-app">
-        <header className="sticky top-[60px] lg:top-0 z-10 border-b border-[var(--border-subtle)] bg-[rgba(var(--bg-app-rgb),0.72)] backdrop-blur-xl">
-          <div className="pt-2"><VehicleSwitcher /></div>
-        </header>
-        <div className="px-4 py-6">
+        <DesktopPageHeader action={<ActionDropdown items={motoActions} />} />
+        <div className="px-4 pt-4 pb-4">
+          <VehicleSwitcher />
+        </div>
+        <div className="px-4 pb-6">
           <EmptyState
             icon={<Bike size={26} strokeWidth={1.8} />}
             headline="No vehicle selected"
@@ -317,7 +323,6 @@ export default function MotoDashboard() {
   }
 
   const allClear = openIssues.length === 0 && alertDocs.length === 0
-  const dateStr  = format(new Date(), 'EEEE, MMMM d')
 
   const { overall: serviceOverall, daysRemaining } = nextDueStatus
 
@@ -338,48 +343,12 @@ export default function MotoDashboard() {
 
   return (
     <div className="min-h-screen bg-app">
+      <DesktopPageHeader action={<ActionDropdown items={motoActions} />} />
 
-      {/* ════════════════════════════════════════════════════════════
-          STICKY HEADER
-      ════════════════════════════════════════════════════════════ */}
-      <header className="sticky top-[60px] lg:top-0 z-10 border-b border-[var(--border-subtle)] bg-[rgba(var(--bg-app-rgb),0.72)] backdrop-blur-xl">
-
-        {/* Desktop: date + quick-new buttons */}
-        <div className="hidden lg:flex items-center gap-3 px-6 pt-3">
-          <div className="flex-1 min-w-0">
-            <p className="section-kicker leading-none">{dateStr}</p>
-            <p className="font-sans font-extrabold text-[18px] text-[var(--text-primary)] tracking-tight leading-snug mt-0.5">
-              Garage
-            </p>
-          </div>
-          <button
-            onClick={() => openMotoEditor({ kind: 'fuel', vehicleId: activeVehicleId })}
-            className="flex items-center gap-1.5 px-3 h-9 rounded-xl text-[var(--text-on-brand)] font-sans font-bold text-[12px] shrink-0 transition-transform active:scale-95"
-            style={{ background: 'var(--color-brand-500)', boxShadow: 'var(--shadow-glow)' }}
-          >
-            <Droplets size={13} strokeWidth={2.5} /> Log Fuel
-          </button>
-          <button
-            onClick={() => openMotoEditor({ kind: 'service', vehicleId: activeVehicleId })}
-            className="flex items-center gap-1.5 px-3 h-9 rounded-xl font-sans font-bold text-[12px] shrink-0 transition-transform active:scale-95"
-            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
-          >
-            <Wrench size={13} strokeWidth={2.5} /> Service
-          </button>
-          <button
-            onClick={() => openMotoEditor({ kind: 'issue', vehicleId: activeVehicleId })}
-            className="flex items-center gap-1.5 px-3 h-9 rounded-xl font-sans font-bold text-[12px] shrink-0 transition-transform active:scale-95"
-            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
-          >
-            <AlertTriangle size={13} strokeWidth={2.5} /> Issue
-          </button>
-        </div>
-
-        {/* Vehicle switcher — both breakpoints */}
-        <div className="pt-2">
-          <VehicleSwitcher />
-        </div>
-      </header>
+      {/* Vehicle switcher — sticky below header on both breakpoints */}
+      <div className="border-b border-[var(--border-subtle)] bg-[rgba(var(--bg-app-rgb),0.72)] backdrop-blur-xl sticky top-[60px] z-10 pt-2">
+        <VehicleSwitcher />
+      </div>
 
       {/* ── Mobile: vehicle snapshot + 4-stat strip ──────────────── */}
       <div className="lg:hidden px-4 pt-4 pb-2 space-y-3">
@@ -722,15 +691,6 @@ export default function MotoDashboard() {
         </aside>
       </div>
 
-      {/* ── FAB — mobile only ─────────────────────────────────────────── */}
-      <button
-        onClick={() => openMotoEditor({ kind: 'fuel', vehicleId: activeVehicleId })}
-        className="lg:hidden fixed bottom-40 right-4 w-[58px] h-[58px] rounded-[22px] text-[var(--text-on-brand)] flex items-center justify-center z-20 active:scale-95 transition-all duration-150"
-        style={{ background: 'var(--color-brand-500)', boxShadow: 'var(--shadow-fab)' }}
-        aria-label="Log fuel"
-      >
-        <Plus size={24} strokeWidth={2.5} />
-      </button>
     </div>
   )
 }

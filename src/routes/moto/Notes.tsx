@@ -1,10 +1,13 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Plus, StickyNote, Pin } from 'lucide-react'
+import { StickyNote, Pin, PlusCircle } from 'lucide-react'
 import { useMoto } from '@/store/moto'
 import { notesRepo } from '@/db/repos/moto/notes'
 import { openMotoEditor } from '@/store/motoEditor'
 import { VehicleSwitcher } from '@/components/moto/VehicleSwitcher'
 import { EmptyState } from '@/components/ui'
+import { DesktopPageHeader } from '@/components/DesktopPageHeader'
+import { ActionDropdown } from '@/components/ActionDropdown'
+import { useMotoActions } from '@/hooks/useMotoActions'
 import type { MotoNote } from '@/types/moto'
 
 function NoteCard({ note }: { note: MotoNote }) {
@@ -36,6 +39,7 @@ function NoteCard({ note }: { note: MotoNote }) {
 
 export default function MotoNotes() {
   const { activeVehicleId } = useMoto()
+  const motoActions = useMotoActions('note')
 
   const notes = useLiveQuery(
     () => activeVehicleId ? notesRepo.getAllForVehicle(activeVehicleId) : Promise.resolve([]),
@@ -46,8 +50,22 @@ export default function MotoNotes() {
   const unpinned = notes.filter(n => !n.pinned)
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-6 pb-28">
-      <VehicleSwitcher />
+    <div className="min-h-screen bg-app">
+      <DesktopPageHeader action={<ActionDropdown items={motoActions} />} />
+      <div className="mx-auto w-full max-w-3xl px-4 py-6 pb-28">
+      <div className="flex items-center justify-between mb-3">
+        <VehicleSwitcher />
+        {activeVehicleId && (
+          <button
+            onClick={() => openMotoEditor({ kind: 'note', vehicleId: activeVehicleId })}
+            className="lg:hidden flex items-center gap-1.5 h-9 px-3.5 rounded-xl font-sans text-[13px] font-bold shrink-0 ml-3 transition-all active:scale-95"
+            style={{ background: 'var(--color-brand-500)', color: 'var(--text-on-brand)', boxShadow: 'var(--shadow-glow)' }}
+          >
+            <PlusCircle size={15} strokeWidth={2.2} />
+            Add note
+          </button>
+        )}
+      </div>
 
       {!activeVehicleId && (
         <EmptyState
@@ -89,16 +107,7 @@ export default function MotoNotes() {
         </>
       )}
 
-      {activeVehicleId && (
-        <button
-          onClick={() => openMotoEditor({ kind: 'note', vehicleId: activeVehicleId })}
-          className="fixed bottom-24 right-5 flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition-transform active:scale-95 md:bottom-8"
-          style={{ background: 'var(--color-brand-500)', boxShadow: 'var(--shadow-glow)' }}
-          aria-label="Add note"
-        >
-          <Plus size={24} color="white" strokeWidth={2.5} />
-        </button>
-      )}
+      </div>
     </div>
   )
 }

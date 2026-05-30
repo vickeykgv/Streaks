@@ -1,12 +1,15 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
 import { BottomNav } from '@/components/BottomNav'
 import { SideNav } from '@/components/SideNav'
 import { MobileTopBar } from '@/components/MobileTopBar'
 import { UpdateToast } from '@/components/UpdateToast'
 import { InstallPrompt } from '@/components/InstallPrompt'
 import { BottomSheet, Modal } from '@/components/ui'
-import Editor from '@/routes/Editor'
 import { MotoEditorHost } from '@/components/moto/MotoEditorHost'
+import { SpendingEditorHost } from '@/components/spending/SpendingEditorHost'
+
+const Editor = lazy(() => import('@/routes/Editor'))
+import { MotoFAB } from '@/components/moto/MotoFAB'
 import { useAppStore } from '@/store/appStore'
 import { useSession } from '@/auth/session'
 import { syncNow } from '@/sync/engine'
@@ -92,31 +95,41 @@ export function AppShell({ children }: AppShellProps) {
           onClose={closeCreateComposer}
           size="lg"
         >
-          <Editor
-            embedded
-            initialMode={createComposer.type}
-            defaultWorld={createComposer.world}
-            onClose={closeCreateComposer}
-            onSaved={closeCreateComposer}
-          />
+          <Suspense fallback={null}>
+            <Editor
+              embedded
+              initialMode={createComposer.type}
+              defaultWorld={createComposer.world}
+              onClose={closeCreateComposer}
+              onSaved={closeCreateComposer}
+            />
+          </Suspense>
         </Modal>
       ) : (
         <BottomSheet
           open={createComposer.open}
           onClose={closeCreateComposer}
         >
-          <Editor
-            embedded
-            initialMode={createComposer.type}
-            defaultWorld={createComposer.world}
-            onClose={closeCreateComposer}
-            onSaved={closeCreateComposer}
-          />
+          <Suspense fallback={null}>
+            <Editor
+              embedded
+              initialMode={createComposer.type}
+              defaultWorld={createComposer.world}
+              onClose={closeCreateComposer}
+              onSaved={closeCreateComposer}
+            />
+          </Suspense>
         </BottomSheet>
       )}
 
       {/* Moto module editor host — modal-driven CRUD for all moto entities */}
       <MotoEditorHost />
+
+      {/* Spending module editor host — global transaction modal */}
+      <SpendingEditorHost />
+
+      {/* Moto module global speed-dial FAB */}
+      <MotoFAB />
     </div>
   )
 }

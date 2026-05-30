@@ -6,6 +6,7 @@ import { db } from '@/db/database'
 import { isHabitDueOn } from '@/lib/recurrence'
 import { computeStreak } from '@/lib/streaks'
 import { EmptyState } from '@/components/ui'
+import { DesktopPageHeader } from '@/components/DesktopPageHeader'
 import type { HabitEntry } from '@/types'
 
 const LV_COLOR = [
@@ -168,7 +169,8 @@ export default function Stats() {
   }
 
   return (
-    <div className="min-h-screen pb-24" style={{ background: 'var(--bg-app)' }}>
+    <div className="min-h-screen pb-24 bg-app">
+      <DesktopPageHeader />
       <div className="mx-auto max-w-2xl px-4">
 
         {/* Header */}

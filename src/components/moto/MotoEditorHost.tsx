@@ -8,6 +8,8 @@ import { PartEditor } from '@/components/moto/editors/PartEditor'
 import { IssueEditor } from '@/components/moto/editors/IssueEditor'
 import { NoteEditor } from '@/components/moto/editors/NoteEditor'
 import { DocumentEditor } from '@/components/moto/editors/DocumentEditor'
+import { VehicleDocEditor } from '@/components/moto/editors/VehicleDocEditor'
+import { MaintenanceItemEditor } from '@/components/moto/editors/MaintenanceItemEditor'
 
 export function MotoEditorHost() {
   const { editor, close } = useMotoEditor()
@@ -20,10 +22,12 @@ export function MotoEditorHost() {
       case 'fuel':     return editor.id ? 'Edit Fuel Fill' : 'Log Fuel Fill'
       case 'service':  return editor.id ? 'Edit Service' : 'Log Service'
       case 'part':     return editor.id ? 'Edit Spare Part' : 'Add Spare Part'
-      case 'issue':    return editor.id ? 'Edit Issue' : 'Report Issue'
+      case 'issue':    return editor.id ? 'Edit note' : 'Note a niggle'
       case 'note':     return editor.id ? 'Edit Note' : 'Add Note'
-      case 'document': return editor.id ? 'Edit Document' : 'Add Document'
-      default:         return ''
+      case 'document':        return editor.id ? 'Edit Document' : 'Add Document'
+      case 'vehicleDoc':      return editor.id ? 'Edit Document' : 'Add Document'
+      case 'maintenanceItem': return editor.id ? 'Edit item' : 'Add to checklist'
+      default:                return ''
     }
   })()
 
@@ -48,6 +52,12 @@ export function MotoEditorHost() {
     }
     if (editor.kind === 'document') {
       return <DocumentEditor id={editor.id} vehicleId={editor.vehicleId} onClose={close} onSaved={close} />
+    }
+    if (editor.kind === 'vehicleDoc') {
+      return <VehicleDocEditor id={editor.id} vehicleId={editor.vehicleId} onClose={close} onSaved={close} />
+    }
+    if (editor.kind === 'maintenanceItem') {
+      return <MaintenanceItemEditor id={editor.id} vehicleId={editor.vehicleId} onClose={close} onSaved={close} />
     }
     return null
   })()

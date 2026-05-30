@@ -24,14 +24,32 @@ const SERVICE_TYPES: { value: ServiceType; label: string; emoji: string }[] = [
 
 const inputCls = 'h-11 w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface-2)] px-3.5 font-sans text-[15px] font-semibold text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--color-brand-500)]'
 
-function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
+function Field({ label, hint, error, children }: { label: string; hint?: string; error?: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="mb-1.5 block font-sans text-[12px] font-bold uppercase tracking-wide text-[var(--text-secondary)]">
-        {label}
-      </label>
+      <div className="flex items-baseline justify-between mb-1.5">
+        <label className="font-sans text-[12px] font-bold uppercase tracking-wide text-[var(--text-secondary)]">
+          {label}
+        </label>
+        {hint && <span className="font-mono text-[11px] text-[var(--text-tertiary)]">{hint}</span>}
+      </div>
       {children}
       {error && <p className="mt-1 text-[11px] text-[var(--color-overdue)]">{error}</p>}
+    </div>
+  )
+}
+
+function PrefixInput({ prefix, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { prefix: string }) {
+  return (
+    <div
+      className="flex items-center h-11 rounded-xl overflow-hidden transition-colors focus-within:border-[var(--color-brand-500)]"
+      style={{ background: 'var(--bg-surface-2)', border: '1px solid var(--border-subtle)' }}
+    >
+      <span className="pl-3.5 shrink-0 font-mono text-[15px] text-[var(--text-tertiary)]">{prefix}</span>
+      <input
+        {...props}
+        className="flex-1 min-w-0 h-full bg-transparent font-sans text-[15px] font-semibold text-[var(--text-primary)] outline-none pl-[6px] pr-3.5"
+      />
     </div>
   )
 }
@@ -206,14 +224,14 @@ export function ServiceEditor({ id, vehicleId, onClose, onSaved }: ServiceEditor
 
         {/* Costs */}
         <div className="grid grid-cols-3 gap-2">
-          <Field label="Labour cost" error={errors.laborCost?.message}>
-            <input type="number" step="0.01" {...register('laborCost')} className={inputCls} placeholder="0" />
+          <Field label="Labour" error={errors.laborCost?.message}>
+            <PrefixInput type="number" step="0.01" prefix="₹" {...register('laborCost')} placeholder="0" />
           </Field>
-          <Field label="Parts cost" error={errors.partsCost?.message}>
-            <input type="number" step="0.01" {...register('partsCost')} className={inputCls} placeholder="0" />
+          <Field label="Parts" error={errors.partsCost?.message}>
+            <PrefixInput type="number" step="0.01" prefix="₹" {...register('partsCost')} placeholder="0" />
           </Field>
-          <Field label="Total cost">
-            <input type="number" step="0.01" {...register('totalCost')} className={inputCls} />
+          <Field label="Total" hint="auto">
+            <PrefixInput type="number" step="0.01" prefix="₹" {...register('totalCost')} />
           </Field>
         </div>
 
@@ -229,7 +247,16 @@ export function ServiceEditor({ id, vehicleId, onClose, onSaved }: ServiceEditor
 
         {/* Open issues to resolve */}
         {openIssues.length > 0 && (
-          <Field label="Resolve open issues">
+          <div
+            className="rounded-[16px] p-[15px]"
+            style={{ background: 'var(--bg-surface-2)', border: '1px solid var(--border-subtle)' }}
+          >
+            <p className="font-sans text-[13.5px] font-semibold text-[var(--text-primary)] mb-0.5">
+              While you're here…
+            </p>
+            <p className="font-body text-[12.5px] text-[var(--text-secondary)] mb-3">
+              Did this visit sort out any open niggles?
+            </p>
             <div className="flex flex-col gap-1.5">
               {openIssues.map(issue => {
                 const checked = (linkedIssueIds ?? []).includes(issue.id)
@@ -239,7 +266,7 @@ export function ServiceEditor({ id, vehicleId, onClose, onSaved }: ServiceEditor
                     onClick={() => toggleIssue(issue.id)}
                     className="flex items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-all"
                     style={{
-                      background: checked ? 'rgba(229,9,20,0.08)' : 'var(--bg-surface-2)',
+                      background: checked ? 'rgba(229,9,20,0.08)' : 'var(--bg-surface)',
                       border: checked ? '1px solid var(--color-brand-500)' : '1px solid var(--border-subtle)',
                     }}
                   >
@@ -265,7 +292,7 @@ export function ServiceEditor({ id, vehicleId, onClose, onSaved }: ServiceEditor
                 )
               })}
             </div>
-          </Field>
+          </div>
         )}
 
         {/* Note */}

@@ -26,4 +26,18 @@ export default defineConfig({
   server: {
     host: true,
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react':  ['react', 'react-dom', 'react-router-dom'],
+          'vendor-dexie':  ['dexie', 'dexie-react-hooks'],
+          'vendor-forms':  ['react-hook-form', '@hookform/resolvers', 'zod'],
+          'vendor-dates':  ['date-fns'],
+          'vendor-icons':  ['lucide-react'],
+          'vendor-supabase': ['@supabase/supabase-js'],
+        },
+      },
+    },
+  },
 })

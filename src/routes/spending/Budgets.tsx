@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Plus, Target, Pencil, TrendingDown, AlertTriangle, CheckCircle2 } from 'lucide-react'
+import { Plus, Target, Pencil, TrendingDown, AlertTriangle, CheckCircle2, ArrowLeftRight, Wallet, Tag, CalendarClock } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { budgetsRepo } from '@/db/repos/spending/budgets'
 import { transactionsRepo } from '@/db/repos/spending/transactions'
@@ -8,7 +9,10 @@ import { categoriesRepo } from '@/db/repos/spending/categories'
 import { settingsRepo } from '@/db/repos/settings'
 import { computeBudgetProgress, budgetBarColor } from '@/lib/spending/budgets'
 import { ProgressBar, Modal, BottomSheet } from '@/components/ui'
+import { DesktopPageHeader } from '@/components/DesktopPageHeader'
+import { ActionDropdown } from '@/components/ActionDropdown'
 import BudgetEditor from '@/routes/spending/BudgetEditor'
+import { openSpendingEditor } from '@/store/spendingEditor'
 import type { SpendingCategory } from '@/types/spending'
 
 function formatAmount(n: number, currency: string) {
@@ -16,6 +20,7 @@ function formatAmount(n: number, currency: string) {
 }
 
 export default function SpendingBudgets() {
+  const navigate = useNavigate()
   const [currency, setCurrency] = useState('INR')
   const [isDesktop, setIsDesktop] = useState(() =>
     typeof window !== 'undefined' ? window.matchMedia('(min-width: 1024px)').matches : false,
@@ -66,8 +71,17 @@ export default function SpendingBudgets() {
   const healthyCount    = progresses.filter(p => p.pct < 80).length
   const overallPct      = totalMonthlyLimit > 0 ? Math.min(100, (totalMonthlySpent / totalMonthlyLimit) * 100) : 0
 
+  const spendingActions = [
+    { label: 'Budget',      icon: <Target size={14} strokeWidth={2.5} />,         onClick: openNew },
+    { label: 'Transaction', icon: <ArrowLeftRight size={14} strokeWidth={2.5} />, onClick: () => openSpendingEditor({ kind: 'transaction', type: 'expense' }) },
+    { label: 'Account',     icon: <Wallet size={14} strokeWidth={2.5} />,         onClick: () => navigate('/spending/accounts') },
+    { label: 'Category',    icon: <Tag size={14} strokeWidth={2.5} />,            onClick: () => navigate('/spending/categories') },
+    { label: 'Recurring',   icon: <CalendarClock size={14} strokeWidth={2.5} />,  onClick: () => navigate('/spending/recurring') },
+  ]
+
   return (
     <div className="min-h-screen bg-app pb-28">
+      <DesktopPageHeader action={<ActionDropdown items={spendingActions} />} />
       <div className="w-full px-4 pt-4 pb-6 lg:px-6">
 
         {/* Hero */}
@@ -87,13 +101,6 @@ export default function SpendingBudgets() {
               )}
             </div>
 
-            <button
-              onClick={openNew}
-              className="hidden lg:flex items-center gap-2 rounded-2xl px-5 h-11 font-sans text-[14px] font-extrabold text-white shrink-0"
-              style={{ background: 'var(--color-brand-500)', boxShadow: 'var(--shadow-glow)' }}
-            >
-              <Plus size={16} strokeWidth={2.5} /> New budget
-            </button>
           </div>
 
           {/* Overall progress + status pills */}

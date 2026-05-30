@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Plus, Wrench } from 'lucide-react'
+import { Wrench } from 'lucide-react'
 import { useMoto } from '@/store/moto'
 import { servicesRepo } from '@/db/repos/moto/services'
 import { vehiclesRepo } from '@/db/repos/moto/vehicles'
@@ -7,6 +7,9 @@ import { openMotoEditor } from '@/store/motoEditor'
 import { getServiceDueStatus, type DueStatus } from '@/lib/moto/serviceDue'
 import { VehicleSwitcher } from '@/components/moto/VehicleSwitcher'
 import { EmptyState } from '@/components/ui'
+import { DesktopPageHeader } from '@/components/DesktopPageHeader'
+import { ActionDropdown } from '@/components/ActionDropdown'
+import { useMotoActions } from '@/hooks/useMotoActions'
 import { format, parseISO } from 'date-fns'
 import type { MotoService, ServiceType } from '@/types/moto'
 
@@ -115,6 +118,7 @@ function ServiceCard({ service, currentOdoKm }: { service: MotoService; currentO
 
 export default function MotoService() {
   const { activeVehicleId } = useMoto()
+  const motoActions = useMotoActions('service')
 
   const services = useLiveQuery(
     () => activeVehicleId ? servicesRepo.getAllForVehicle(activeVehicleId) : Promise.resolve([]),
@@ -129,7 +133,9 @@ export default function MotoService() {
   const currentOdoKm = vehicle?.currentOdoKm ?? 0
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-6 pb-28">
+    <div className="min-h-screen bg-app">
+      <DesktopPageHeader action={<ActionDropdown items={motoActions} />} />
+      <div className="mx-auto w-full max-w-3xl px-4 py-6 pb-28">
       <VehicleSwitcher />
 
       {!activeVehicleId && (
@@ -156,16 +162,7 @@ export default function MotoService() {
         </div>
       )}
 
-      {activeVehicleId && (
-        <button
-          onClick={() => openMotoEditor({ kind: 'service', vehicleId: activeVehicleId })}
-          className="fixed bottom-24 right-5 flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition-transform active:scale-95 md:bottom-8"
-          style={{ background: 'var(--color-brand-500)', boxShadow: 'var(--shadow-glow)' }}
-          aria-label="Log service"
-        >
-          <Plus size={24} color="white" strokeWidth={2.5} />
-        </button>
-      )}
+      </div>
     </div>
   )
 }

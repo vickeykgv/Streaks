@@ -7,6 +7,7 @@ import { transactionsRepo } from '@/db/repos/spending/transactions'
 import { categoriesRepo } from '@/db/repos/spending/categories'
 import { settingsRepo } from '@/db/repos/settings'
 import { computeReportData, periodLabel, type ReportPeriod } from '@/lib/spending/reports'
+import { DesktopPageHeader } from '@/components/DesktopPageHeader'
 
 function formatAmount(n: number, currency: string) {
   return new Intl.NumberFormat('en-IN', { style: 'currency', currency, maximumFractionDigits: 0 }).format(n)
@@ -41,6 +42,7 @@ export default function SpendingReports() {
 
   return (
     <div className="min-h-screen bg-app pb-28">
+      <DesktopPageHeader />
       <div className="w-full px-4 pt-4 pb-6 lg:px-6">
 
         {/* Hero */}

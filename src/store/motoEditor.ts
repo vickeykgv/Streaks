@@ -2,13 +2,15 @@ import { create } from 'zustand'
 
 export type MotoEditorPayload =
   | { kind: 'closed' }
-  | { kind: 'vehicle';  id?: string }
-  | { kind: 'fuel';     id?: string; vehicleId: string }
-  | { kind: 'service';  id?: string; vehicleId: string }
-  | { kind: 'part';     id?: string; vehicleId: string }
-  | { kind: 'issue';    id?: string; vehicleId: string }
-  | { kind: 'note';     id?: string; vehicleId: string }
-  | { kind: 'document'; id?: string; vehicleId?: string }
+  | { kind: 'vehicle';           id?: string }
+  | { kind: 'fuel';              id?: string; vehicleId: string }
+  | { kind: 'service';           id?: string; vehicleId: string }
+  | { kind: 'part';              id?: string; vehicleId: string }
+  | { kind: 'issue';             id?: string; vehicleId: string }
+  | { kind: 'note';              id?: string; vehicleId: string }
+  | { kind: 'document';          id?: string; vehicleId?: string }
+  | { kind: 'vehicleDoc';        id?: string; vehicleId: string }
+  | { kind: 'maintenanceItem';   id?: string; vehicleId: string }
 
 interface MotoEditorState {
   editor: MotoEditorPayload

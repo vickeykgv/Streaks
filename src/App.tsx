@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState, useEffect, useRef } from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom'
 import { AppShell }    from '@/components/AppShell'
 import { ToastContainer } from '@/components/ui'
 import { ErrorBoundary }  from '@/components/ErrorBoundary'
@@ -7,38 +7,43 @@ import { Onboarding }     from '@/components/Onboarding'
 import { settingsRepo }   from '@/db/repos/settings'
 import { useAppBadge }    from '@/hooks/useAppBadge'
 import { runDueRecurring } from '@/lib/spending/recurringRunner'
-import Dashboard   from '@/routes/Dashboard'
-import Habits      from '@/routes/Habits'
-import HabitDetail from '@/routes/HabitDetail'
-import Tasks       from '@/routes/Tasks'
-import TaskDetail  from '@/routes/TaskDetail'
-import Editor      from '@/routes/Editor'
-import Tags        from '@/routes/Tags'
-import Settings    from '@/routes/Settings'
-import SignIn      from '@/routes/SignIn'
-import SpendingDashboard     from '@/routes/spending/Dashboard'
-import SpendingTransactions   from '@/routes/spending/Transactions'
-import SpendingCategories     from '@/routes/spending/Categories'
-import SpendingAccounts       from '@/routes/spending/Accounts'
-import SpendingBudgets        from '@/routes/spending/Budgets'
-import SpendingReports        from '@/routes/spending/Reports'
-import TransactionEditor      from '@/routes/spending/TransactionEditor'
-import AccountEditor          from '@/routes/spending/AccountEditor'
-import CategoryEditor         from '@/routes/spending/CategoryEditor'
-import BudgetEditor           from '@/routes/spending/BudgetEditor'
-import SpendingRecurring      from '@/routes/spending/Recurring'
-import RecurringEditor        from '@/routes/spending/RecurringEditor'
-import MotoDashboard          from '@/routes/moto/Dashboard'
-import MotoVehicles           from '@/routes/moto/Vehicles'
-import MotoFuel               from '@/routes/moto/Fuel'
-import MotoService            from '@/routes/moto/Service'
-import MotoParts              from '@/routes/moto/Parts'
-import MotoIssues             from '@/routes/moto/Issues'
-import MotoNotes              from '@/routes/moto/Notes'
-import MotoDocuments          from '@/routes/moto/Documents'
-import MotoReports            from '@/routes/moto/Reports'
 
-const Stats = lazy(() => import('@/routes/Stats'))
+// Core routes — lazy-loaded per route for code splitting
+const Dashboard   = lazy(() => import('@/routes/Dashboard'))
+const Habits      = lazy(() => import('@/routes/Habits'))
+const HabitDetail = lazy(() => import('@/routes/HabitDetail'))
+const Tasks       = lazy(() => import('@/routes/Tasks'))
+const TaskDetail  = lazy(() => import('@/routes/TaskDetail'))
+const Stats       = lazy(() => import('@/routes/Stats'))
+const Editor      = lazy(() => import('@/routes/Editor'))
+const Tags        = lazy(() => import('@/routes/Tags'))
+const Settings    = lazy(() => import('@/routes/Settings'))
+const SignIn      = lazy(() => import('@/routes/SignIn'))
+
+// Spending module
+const SpendingDashboard   = lazy(() => import('@/routes/spending/Dashboard'))
+const SpendingTransactions = lazy(() => import('@/routes/spending/Transactions'))
+const SpendingCategories  = lazy(() => import('@/routes/spending/Categories'))
+const SpendingAccounts    = lazy(() => import('@/routes/spending/Accounts'))
+const SpendingBudgets     = lazy(() => import('@/routes/spending/Budgets'))
+const SpendingReports     = lazy(() => import('@/routes/spending/Reports'))
+const TransactionEditor   = lazy(() => import('@/routes/spending/TransactionEditor'))
+const AccountEditor       = lazy(() => import('@/routes/spending/AccountEditor'))
+const CategoryEditor      = lazy(() => import('@/routes/spending/CategoryEditor'))
+const BudgetEditor        = lazy(() => import('@/routes/spending/BudgetEditor'))
+const SpendingRecurring   = lazy(() => import('@/routes/spending/Recurring'))
+const RecurringEditor     = lazy(() => import('@/routes/spending/RecurringEditor'))
+
+// Moto module
+const MotoDashboard  = lazy(() => import('@/routes/moto/Dashboard'))
+const MotoVehicles   = lazy(() => import('@/routes/moto/Vehicles'))
+const MotoFuel       = lazy(() => import('@/routes/moto/Fuel'))
+const MotoService    = lazy(() => import('@/routes/moto/Service'))
+const MotoParts      = lazy(() => import('@/routes/moto/Parts'))
+const MotoIssues     = lazy(() => import('@/routes/moto/Issues'))
+const MotoNotes      = lazy(() => import('@/routes/moto/Notes'))
+const MotoDocuments  = lazy(() => import('@/routes/moto/Documents'))
+const MotoReports    = lazy(() => import('@/routes/moto/Reports'))
 
 function RouteLoader() {
   return (
@@ -46,6 +51,23 @@ function RouteLoader() {
       <div className="h-7 w-7 animate-spin rounded-full border-2 border-[var(--color-brand-500)] border-t-transparent" />
     </div>
   )
+}
+
+// When the PWA cold-launches it always opens at start_url ("/Streaks/").
+// If the user last used a different module, redirect them back to it.
+function StartupModuleRedirect() {
+  const navigate = useNavigate()
+  const { pathname } = useLocation()
+
+  useEffect(() => {
+    if (pathname !== '/') return
+    const stored = localStorage.getItem('active-module')
+    if (stored === 'spending') navigate('/spending', { replace: true })
+    else if (stored === 'moto') navigate('/moto', { replace: true })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  return null
 }
 
 export default function App() {
@@ -93,6 +115,7 @@ export default function App() {
   return (
     <BrowserRouter basename={import.meta.env.BASE_URL}>
       <ErrorBoundary>
+        <StartupModuleRedirect />
         <AppShell>
           <Suspense fallback={<RouteLoader />}>
             <Routes>

@@ -1,11 +1,15 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Plus, ChevronRight, Tag } from 'lucide-react'
+import { Plus, ChevronRight, Tag, ArrowLeftRight, Wallet, Target, CalendarClock } from 'lucide-react'
 import { categoriesRepo } from '@/db/repos/spending/categories'
 import { transactionsRepo } from '@/db/repos/spending/transactions'
 import { Modal, BottomSheet } from '@/components/ui'
+import { DesktopPageHeader } from '@/components/DesktopPageHeader'
+import { ActionDropdown } from '@/components/ActionDropdown'
 import CategoryEditor from '@/routes/spending/CategoryEditor'
 import { cn } from '@/lib/utils'
+import { openSpendingEditor } from '@/store/spendingEditor'
 import type { CategoryType, SpendingCategory } from '@/types/spending'
 
 type Tab = CategoryType
@@ -104,6 +108,7 @@ function CategoryRow({
 }
 
 export default function SpendingCategories() {
+  const navigate = useNavigate()
   const [tab, setTab] = useState<Tab>('expense')
   const [isDesktop, setIsDesktop] = useState(() =>
     typeof window !== 'undefined' ? window.matchMedia('(min-width: 1024px)').matches : false,
@@ -135,8 +140,17 @@ export default function SpendingCategories() {
   const expenseCount = allCategories.filter(c => c.type === 'expense').length
   const incomeCount  = allCategories.filter(c => c.type === 'income').length
 
+  const spendingActions = [
+    { label: 'Category',    icon: <Tag size={14} strokeWidth={2.5} />,            onClick: () => openNew(tab) },
+    { label: 'Transaction', icon: <ArrowLeftRight size={14} strokeWidth={2.5} />, onClick: () => openSpendingEditor({ kind: 'transaction', type: 'expense' }) },
+    { label: 'Account',     icon: <Wallet size={14} strokeWidth={2.5} />,         onClick: () => navigate('/spending/accounts') },
+    { label: 'Budget',      icon: <Target size={14} strokeWidth={2.5} />,         onClick: () => navigate('/spending/budgets') },
+    { label: 'Recurring',   icon: <CalendarClock size={14} strokeWidth={2.5} />,  onClick: () => navigate('/spending/recurring') },
+  ]
+
   return (
     <div className="min-h-screen bg-app pb-28">
+      <DesktopPageHeader action={<ActionDropdown items={spendingActions} />} />
       <div className="mx-auto max-w-3xl px-4 pt-4">
 
         {/* Header */}

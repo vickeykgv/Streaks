@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Plus, FileText } from 'lucide-react'
+import { FileText, PlusCircle } from 'lucide-react'
 import { useMoto } from '@/store/moto'
 import { documentsRepo } from '@/db/repos/moto/documents'
 import { vehiclesRepo } from '@/db/repos/moto/vehicles'
@@ -7,6 +7,9 @@ import { openMotoEditor } from '@/store/motoEditor'
 import { getDocumentStatus, type DocStatus } from '@/lib/moto/documentStatus'
 import { VehicleSwitcher } from '@/components/moto/VehicleSwitcher'
 import { EmptyState } from '@/components/ui'
+import { DesktopPageHeader } from '@/components/DesktopPageHeader'
+import { ActionDropdown } from '@/components/ActionDropdown'
+import { useMotoActions } from '@/hooks/useMotoActions'
 import { format, parseISO } from 'date-fns'
 import type { MotoDocument, MotoVehicle } from '@/types/moto'
 
@@ -91,6 +94,7 @@ function DocumentCard({ doc, vehicles }: { doc: MotoDocument; vehicles: MotoVehi
 
 export default function MotoDocuments() {
   const { activeVehicleId } = useMoto()
+  const motoActions = useMotoActions('document')
 
   const documents = useLiveQuery(
     () => documentsRepo.getAll(activeVehicleId ?? undefined),
@@ -110,8 +114,20 @@ export default function MotoDocuments() {
   })
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-6 pb-28">
-      <VehicleSwitcher />
+    <div className="min-h-screen bg-app">
+      <DesktopPageHeader action={<ActionDropdown items={motoActions} />} />
+      <div className="mx-auto w-full max-w-3xl px-4 py-6 pb-28">
+      <div className="flex items-center justify-between mb-3">
+        <VehicleSwitcher />
+        <button
+          onClick={() => openMotoEditor({ kind: 'document', vehicleId: activeVehicleId ?? undefined })}
+          className="lg:hidden flex items-center gap-1.5 h-9 px-3.5 rounded-xl font-sans text-[13px] font-bold shrink-0 ml-3 transition-all active:scale-95"
+          style={{ background: 'var(--color-brand-500)', color: 'var(--text-on-brand)', boxShadow: 'var(--shadow-glow)' }}
+        >
+          <PlusCircle size={15} strokeWidth={2.2} />
+          Add doc
+        </button>
+      </div>
 
       {documents.length === 0 && (
         <EmptyState
@@ -129,14 +145,7 @@ export default function MotoDocuments() {
         </div>
       )}
 
-      <button
-        onClick={() => openMotoEditor({ kind: 'document', vehicleId: activeVehicleId ?? undefined })}
-        className="fixed bottom-24 right-5 flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition-transform active:scale-95 md:bottom-8"
-        style={{ background: 'var(--color-brand-500)', boxShadow: 'var(--shadow-glow)' }}
-        aria-label="Add document"
-      >
-        <Plus size={24} color="white" strokeWidth={2.5} />
-      </button>
+      </div>
     </div>
   )
 }

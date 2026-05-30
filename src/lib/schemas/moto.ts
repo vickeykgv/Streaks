@@ -92,3 +92,8 @@ export const vehicleDocSchema = z.object({
   note:       z.string().max(500).optional(),
 })
 export type VehicleDocFormValues = z.infer<typeof vehicleDocSchema>
+
+export const maintenanceItemSchema = z.object({
+  title: z.string().min(1, 'Description required').max(200),
+})
+export type MaintenanceItemFormValues = z.infer<typeof maintenanceItemSchema>

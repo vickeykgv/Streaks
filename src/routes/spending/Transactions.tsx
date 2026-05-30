@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState, useMemo, type TouchEvent } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import {
-  Plus,
   ArrowLeftRight,
   TrendingUp,
   TrendingDown,
@@ -13,6 +12,11 @@ import {
   ArrowUpDown,
   Sparkles,
   CalendarRange,
+  Landmark,
+  Target,
+  Tag,
+  CalendarClock,
+  RefreshCw,
 } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { transactionsRepo } from '@/db/repos/spending/transactions'
@@ -21,8 +25,11 @@ import { categoriesRepo } from '@/db/repos/spending/categories'
 import { settingsRepo } from '@/db/repos/settings'
 import { toast } from '@/store/toastStore'
 import { cn } from '@/lib/utils'
-import { BottomSheet, DatePicker, Modal } from '@/components/ui'
-import TransactionEditor from '@/routes/spending/TransactionEditor'
+import { BottomSheet, DatePicker } from '@/components/ui'
+import { DesktopPageHeader } from '@/components/DesktopPageHeader'
+import { ActionDropdown } from '@/components/ActionDropdown'
+import { FabMenu } from '@/components/FabMenu'
+import { openSpendingEditor } from '@/store/spendingEditor'
 import {
   filterAndSort,
   countActiveFilters,
@@ -375,20 +382,10 @@ function FilterPanel({
 export default function SpendingTransactions() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [currency, setCurrency] = useState('INR')
+  const navigate = useNavigate()
   const [filterOpen, setFilterOpen] = useState(false)
-  const [isDesktop, setIsDesktop] = useState(() =>
-    typeof window !== 'undefined' ? window.matchMedia('(min-width: 1024px)').matches : false,
-  )
-  const [editorState, setEditorState] = useState<{ open: boolean; id?: string; type?: TransactionType }>({ open: false })
 
   useEffect(() => { settingsRepo.get<string>('baseCurrency', 'INR').then(setCurrency) }, [])
-  useEffect(() => {
-    const media = window.matchMedia('(min-width: 1024px)')
-    const sync = (event?: MediaQueryListEvent) => setIsDesktop(event ? event.matches : media.matches)
-    sync()
-    media.addEventListener('change', sync)
-    return () => media.removeEventListener('change', sync)
-  }, [])
 
   const filters = useMemo(() => filtersFromParams(searchParams), [searchParams])
 
@@ -450,12 +447,28 @@ export default function SpendingTransactions() {
       onClick: () => transactionsRepo.restore(tx.id),
     })
   }
-  const openCreateModal = (type: TransactionType) => setEditorState({ open: true, type })
-  const openEditModal = (id: string) => setEditorState({ open: true, id })
-  const closeEditor = () => setEditorState({ open: false })
+  const openCreateModal = (type: TransactionType) => openSpendingEditor({ kind: 'transaction', type })
+  const openEditModal = (id: string) => openSpendingEditor({ kind: 'transaction', id })
+
+  const spendingActions = [
+    { label: 'Transaction', icon: <ArrowLeftRight size={14} strokeWidth={2.5} />, onClick: () => openCreateModal('expense') },
+    { label: 'Account',     icon: <Landmark size={14} strokeWidth={2.5} />,       onClick: () => navigate('/spending/accounts') },
+    { label: 'Budget',      icon: <Target size={14} strokeWidth={2.5} />,         onClick: () => navigate('/spending/budgets') },
+    { label: 'Category',    icon: <Tag size={14} strokeWidth={2.5} />,            onClick: () => navigate('/spending/categories') },
+    { label: 'Recurring',   icon: <CalendarClock size={14} strokeWidth={2.5} />,  onClick: () => navigate('/spending/recurring') },
+  ]
+
+  const fabItems = [
+    { label: 'Transaction', description: 'Log income or expense', icon: <ArrowLeftRight size={22} strokeWidth={1.6} />, onClick: () => openCreateModal('expense'), color: 'var(--color-brand-500)' },
+    { label: 'Account',     description: 'Cash, bank, wallet',    icon: <Landmark size={22} strokeWidth={1.6} />,       onClick: () => navigate('/spending/accounts'), color: '#3b82f6' },
+    { label: 'Budget',      description: 'Set a spending limit',  icon: <Target size={22} strokeWidth={1.6} />,         onClick: () => navigate('/spending/budgets'),  color: '#10b981' },
+    { label: 'Category',    description: 'Income or expense type', icon: <Tag size={22} strokeWidth={1.6} />,           onClick: () => navigate('/spending/categories'), color: '#f97316' },
+    { label: 'Recurring',   description: 'Auto-log subscriptions', icon: <RefreshCw size={22} strokeWidth={1.6} />,     onClick: () => navigate('/spending/recurring'),  color: '#8b5cf6' },
+  ]
 
   return (
     <div className="min-h-screen bg-app pb-28">
+      <DesktopPageHeader action={<ActionDropdown items={spendingActions} />} />
       <div className="w-full px-4 pt-4 lg:px-6">
         <div className="mb-4 hero-panel rounded-[30px] px-5 py-5 lg:px-6 lg:py-6">
           <div className="grid gap-5 lg:grid-cols-[minmax(0,1.4fr)_360px] lg:items-center">
@@ -465,14 +478,6 @@ export default function SpendingTransactions() {
                 <div>
                   <div className="font-sans text-[30px] font-extrabold tracking-tight text-[var(--text-primary)] lg:text-[38px]">Transactions</div>
                 </div>
-                <button
-                  onClick={() => openCreateModal('expense')}
-                  className="hidden h-12 items-center gap-2 rounded-2xl px-4 font-sans text-[14px] font-extrabold text-white lg:flex"
-                  style={{ background: 'var(--color-brand-500)', boxShadow: 'var(--shadow-glow)' }}
-                >
-                  <Plus size={16} strokeWidth={2.5} />
-                  Add transaction
-                </button>
               </div>
               <div className="mt-2 max-w-2xl font-body text-[13px] text-[var(--text-secondary)]">
                 {filtered.length !== transactions.length
@@ -687,41 +692,7 @@ export default function SpendingTransactions() {
         </div>
       </div>
 
-      <button
-        onClick={() => openCreateModal('expense')}
-        className="fixed bottom-40 right-5 z-10 flex h-14 w-14 items-center justify-center rounded-full shadow-[var(--shadow-fab)] lg:hidden"
-        style={{ background: 'var(--color-brand-500)' }}
-        aria-label="Add transaction"
-      >
-        <Plus size={24} strokeWidth={2.5} color="#fff" />
-      </button>
-
-      {isDesktop ? (
-        <Modal
-          open={editorState.open}
-          onClose={closeEditor}
-          title={editorState.id ? 'Edit Transaction' : 'Add Transaction'}
-          size="lg"
-        >
-          <TransactionEditor
-            embedded
-            initialId={editorState.id}
-            initialType={editorState.type}
-            onClose={closeEditor}
-            onSaved={closeEditor}
-          />
-        </Modal>
-      ) : (
-        <BottomSheet open={editorState.open} onClose={closeEditor} title={editorState.id ? 'Edit Transaction' : 'Add Transaction'}>
-          <TransactionEditor
-            embedded
-            initialId={editorState.id}
-            initialType={editorState.type}
-            onClose={closeEditor}
-            onSaved={closeEditor}
-          />
-        </BottomSheet>
-      )}
+      <FabMenu items={fabItems} title="Add to spending" />
 
       <FilterPanel
         open={filterOpen}

@@ -127,18 +127,18 @@ export function IssueEditor({ id, vehicleId, onClose, onSaved }: IssueEditorProp
     <div className="overflow-y-auto px-5 pb-6 pt-2">
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
 
-        <Field label="Title" error={errors.title?.message}>
-          <input {...register('title')} className={inputCls} placeholder="e.g. Engine oil leak near filter" autoFocus />
+        <Field label="What's up?" error={errors.title?.message}>
+          <input {...register('title')} className={inputCls} placeholder="e.g. Squeaky belt on startup" autoFocus />
         </Field>
 
-        <Field label="Description — optional">
+        <Field label="Details — optional">
           <textarea {...register('description')} rows={3}
             className="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface-2)] px-3.5 py-2.5 font-body text-[14px] text-[var(--text-primary)] outline-none resize-none focus:border-[var(--color-brand-500)]"
-            placeholder="More details, when it started, conditions…"
+            placeholder="Anything you'll want to remember…"
           />
         </Field>
 
-        <Field label="Priority">
+        <Field label="How urgent?">
           <div className="grid grid-cols-3 gap-2">
             {PRIORITIES.map(({ value, label, emoji }) => {
               const on = priority === value
@@ -198,7 +198,7 @@ export function IssueEditor({ id, vehicleId, onClose, onSaved }: IssueEditorProp
           className="w-full rounded-2xl font-sans text-[15px] font-extrabold text-[var(--text-on-brand)] disabled:opacity-60"
           style={{ background: 'var(--color-brand-500)', boxShadow: 'var(--shadow-glow)', height: '52px' }}
         >
-          {isSubmitting ? 'Saving…' : isEdit ? 'Save changes' : 'Report issue'}
+          {isSubmitting ? 'Saving…' : isEdit ? 'Save changes' : 'Note it down'}
         </button>
       </form>
 

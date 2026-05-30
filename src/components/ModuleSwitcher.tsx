@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Flame, Wallet, Bike } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useModule, type ActiveModule } from '@/store/module'
@@ -11,8 +11,14 @@ const MODULES: { id: ActiveModule; label: string; Icon: typeof Flame; home: stri
 
 // Full-width horizontal segmented control for the mobile bottom nav
 export function ModuleSwitcher() {
-  const { activeModule, setModule } = useModule()
+  const { setModule } = useModule()
   const navigate = useNavigate()
+  const { pathname } = useLocation()
+
+  const activeModule: ActiveModule =
+    pathname.startsWith('/moto')     ? 'moto' :
+    pathname.startsWith('/spending') ? 'spending' :
+    'habits'
 
   const handleSwitch = (m: ActiveModule, home: string) => {
     setModule(m)

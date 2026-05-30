@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Plus, Cog } from 'lucide-react'
+import { Cog } from 'lucide-react'
 import { useMoto } from '@/store/moto'
 import { partsRepo } from '@/db/repos/moto/parts'
 import { vehiclesRepo } from '@/db/repos/moto/vehicles'
@@ -7,6 +7,9 @@ import { openMotoEditor } from '@/store/motoEditor'
 import { getPartDueStatus, type DueStatus } from '@/lib/moto/partsLife'
 import { VehicleSwitcher } from '@/components/moto/VehicleSwitcher'
 import { EmptyState } from '@/components/ui'
+import { DesktopPageHeader } from '@/components/DesktopPageHeader'
+import { ActionDropdown } from '@/components/ActionDropdown'
+import { useMotoActions } from '@/hooks/useMotoActions'
 import { format, parseISO } from 'date-fns'
 import type { MotoPart } from '@/types/moto'
 
@@ -79,6 +82,7 @@ function PartCard({ part, currentOdoKm }: { part: MotoPart; currentOdoKm: number
 
 export default function MotoParts() {
   const { activeVehicleId } = useMoto()
+  const motoActions = useMotoActions('part')
 
   const parts = useLiveQuery(
     () => activeVehicleId ? partsRepo.getAllForVehicle(activeVehicleId) : Promise.resolve([]),
@@ -93,7 +97,9 @@ export default function MotoParts() {
   const currentOdoKm = vehicle?.currentOdoKm ?? 0
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-6 pb-28">
+    <div className="min-h-screen bg-app">
+      <DesktopPageHeader action={<ActionDropdown items={motoActions} />} />
+      <div className="mx-auto w-full max-w-3xl px-4 py-6 pb-28">
       <VehicleSwitcher />
 
       {!activeVehicleId && (
@@ -120,16 +126,7 @@ export default function MotoParts() {
         </div>
       )}
 
-      {activeVehicleId && (
-        <button
-          onClick={() => openMotoEditor({ kind: 'part', vehicleId: activeVehicleId })}
-          className="fixed bottom-24 right-5 flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition-transform active:scale-95 md:bottom-8"
-          style={{ background: 'var(--color-brand-500)', boxShadow: 'var(--shadow-glow)' }}
-          aria-label="Add spare part"
-        >
-          <Plus size={24} color="white" strokeWidth={2.5} />
-        </button>
-      )}
+      </div>
     </div>
   )
 }

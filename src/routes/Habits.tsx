@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Search, ChevronRight, Flame, Plus, Sparkles, SearchX } from 'lucide-react'
+import { Search, ChevronRight, Flame, Plus, Sparkles, SearchX, ClipboardList, Tag } from 'lucide-react'
 import { habitsRepo } from '@/db/repos/habits'
 import { entriesRepo } from '@/db/repos/entries'
 import { tagsRepo } from '@/db/repos/tags'
@@ -9,8 +9,12 @@ import { computeStreak, computeCompletionRate } from '@/lib/streaks'
 import { format } from 'date-fns'
 import { useAppStore } from '@/store/appStore'
 import { EmptyState } from '@/components/ui'
+import { DesktopPageHeader } from '@/components/DesktopPageHeader'
+import { ActionDropdown } from '@/components/ActionDropdown'
+import { FabMenu } from '@/components/FabMenu'
 
 export default function Habits() {
+  const navigate = useNavigate()
   const openCreateComposer = useAppStore(s => s.openCreateComposer)
   const [search, setSearch] = useState('')
   const [filterTag, setFilterTag] = useState<string | null>(null)
@@ -25,8 +29,21 @@ export default function Habits() {
     return matchSearch && matchTag
   })
 
+  const headerActions = [
+    { label: 'New habit', icon: <Sparkles size={14} strokeWidth={2.5} />, onClick: () => openCreateComposer('habit') },
+    { label: 'New task',  icon: <ClipboardList size={14} strokeWidth={2.5} />, onClick: () => openCreateComposer('task') },
+    { label: 'Manage tags', icon: <Tag size={14} strokeWidth={2.5} />, onClick: () => navigate('/settings') },
+  ]
+
+  const fabItems = [
+    { label: 'New habit', description: 'Daily recurring routine', icon: <Sparkles size={22} strokeWidth={1.6} />, onClick: () => openCreateComposer('habit'), color: 'var(--color-brand-500)' },
+    { label: 'New task',  description: 'One-off with a deadline', icon: <ClipboardList size={22} strokeWidth={1.6} />, onClick: () => openCreateComposer('task'), color: '#3b82f6' },
+    { label: 'Manage tags', description: 'Organise your habits',  icon: <Tag size={22} strokeWidth={1.6} />, onClick: () => navigate('/settings'), color: '#f97316' },
+  ]
+
   return (
     <div className="min-h-screen bg-app pb-28">
+      <DesktopPageHeader action={<ActionDropdown items={headerActions} />} />
       <div className="mx-auto max-w-3xl px-0">
         <div className="px-4 pt-4">
           <div className="hero-panel rounded-[30px] px-5 py-5">
@@ -128,14 +145,7 @@ export default function Habits() {
           {showArchived ? 'Hide archived' : 'Show archived'}
         </button>
 
-        <button
-          onClick={() => openCreateComposer('habit')}
-          className="fixed bottom-40 right-4 z-20 flex h-[58px] w-[58px] items-center justify-center rounded-[22px] text-[var(--text-on-brand)] transition-transform active:scale-95 lg:bottom-8 lg:right-8"
-          style={{ background: 'var(--color-brand-500)', boxShadow: 'var(--shadow-fab)' }}
-          aria-label="New habit"
-        >
-          <Plus size={24} strokeWidth={2.5} />
-        </button>
+        <FabMenu items={fabItems} title="Add to habits" />
       </div>
     </div>
   )
