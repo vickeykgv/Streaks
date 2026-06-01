@@ -69,7 +69,7 @@ export interface HabitEntry extends Pick<SyncMeta, 'updatedAt' | 'syncedAt' | 'd
   completedAt?: number
 }
 
-export interface Tag {
+export interface Tag extends SyncMeta {
   id: string
   name: string
   color: string

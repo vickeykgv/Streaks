@@ -1,6 +1,8 @@
 import { db } from '@/db/database'
 import type { Habit } from '@/types'
 import { nanoid } from 'nanoid'
+import { useSession } from '@/auth/session'
+import { scheduleSyncSoon } from '@/sync/schedule'
 
 const now = () => Date.now()
 
@@ -15,28 +17,38 @@ export const habitsRepo = {
   },
 
   async create(data: Omit<Habit, 'id' | 'createdAt' | 'updatedAt' | 'dirty' | 'syncedAt' | 'deletedAt'>) {
+    const user = useSession.getState().user
     const habit: Habit = {
       ...data,
       id: nanoid(),
       createdAt: now(),
       updatedAt: now(),
       dirty: true,
+      ownerId: user?.id,
     }
     await db.habits.add(habit)
+    scheduleSyncSoon()
     return habit
   },
 
   async update(id: string, patch: Partial<Habit>) {
     await db.habits.update(id, { ...patch, updatedAt: now(), dirty: true })
+    scheduleSyncSoon()
   },
 
   async archive(id: string) {
     await db.habits.update(id, { archived: true, updatedAt: now(), dirty: true })
+    scheduleSyncSoon()
   },
 
   async delete(id: string) {
-    // Soft-delete (tombstone) so sync can propagate the deletion
     await db.habits.update(id, { deletedAt: now(), updatedAt: now(), dirty: true })
+    scheduleSyncSoon()
+  },
+
+  async restore(id: string) {
+    await db.habits.update(id, { deletedAt: undefined, updatedAt: now(), dirty: true })
+    scheduleSyncSoon()
   },
 
   async removeTagFromAll(tagId: string) {
@@ -46,5 +58,6 @@ export const habitsRepo = {
         db.habits.update(h.id, { tags: h.tags.filter(t => t !== tagId), updatedAt: now(), dirty: true })
       )
     )
+    if (habits.length > 0) scheduleSyncSoon()
   },
 }

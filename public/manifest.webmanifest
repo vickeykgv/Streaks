@@ -2,8 +2,8 @@
   "name": "Streaks",
   "short_name": "Streaks",
   "description": "Build lasting habits and track your streaks with reminders and sync.",
-  "start_url": "/",
-  "scope": "/",
+  "start_url": "/Streaks/",
+  "scope": "/Streaks/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#ffffff",
@@ -27,16 +27,25 @@
   ],
   "shortcuts": [
     {
+      "name": "Today",
+      "short_name": "Today",
+      "description": "Jump to today's habits and tasks",
+      "url": ".",
+      "icons": [{ "src": "icons/icon-96.png", "sizes": "96x96", "type": "image/png" }]
+    },
+    {
       "name": "Add Habit",
       "short_name": "New Habit",
+      "description": "Create a new habit",
       "url": "new?type=habit",
-      "icons": [{ "src": "icons/icon-96.png", "sizes": "96x96" }]
+      "icons": [{ "src": "icons/icon-96.png", "sizes": "96x96", "type": "image/png" }]
     },
     {
       "name": "Add Task",
       "short_name": "New Task",
+      "description": "Create a new task",
       "url": "new?type=task",
-      "icons": [{ "src": "icons/icon-96.png", "sizes": "96x96" }]
+      "icons": [{ "src": "icons/icon-96.png", "sizes": "96x96", "type": "image/png" }]
     }
   ]
 }

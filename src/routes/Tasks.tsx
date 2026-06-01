@@ -1,12 +1,15 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Plus, ClipboardList, CheckCircle2, FolderOpen } from 'lucide-react'
+import { ClipboardList, CheckCircle2, FolderOpen, Sparkles, Tag } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { tasksRepo } from '@/db/repos/tasks'
 import { tagsRepo } from '@/db/repos/tags'
 import { useAppStore } from '@/store/appStore'
 import { EmptyState } from '@/components/ui'
+import { DesktopPageHeader } from '@/components/DesktopPageHeader'
+import { ActionDropdown } from '@/components/ActionDropdown'
+import { FabMenu } from '@/components/FabMenu'
 import type { Task } from '@/types'
 
 const PRIORITY_COLOR: Record<string, string> = {
@@ -19,6 +22,7 @@ const TABS = ['Pending', 'Done', 'All'] as const
 type Tab = typeof TABS[number]
 
 export default function Tasks() {
+  const navigate = useNavigate()
   const openCreateComposer = useAppStore(s => s.openCreateComposer)
   const [tab, setTab] = useState<Tab>('Pending')
   const [filterTag, setFilterTag] = useState<string | null>(null)
@@ -42,8 +46,21 @@ export default function Tasks() {
   const upcoming = visibleTasks.filter(t => t.status === 'pending' && t.dueDate > today).sort((a, b) => a.dueDate.localeCompare(b.dueDate))
   const done = visibleTasks.filter(t => t.status !== 'pending').sort((a, b) => (b.completedAt ?? 0) - (a.completedAt ?? 0))
 
+  const headerActions = [
+    { label: 'New task',    icon: <ClipboardList size={14} strokeWidth={2.5} />, onClick: () => openCreateComposer('task') },
+    { label: 'New habit',   icon: <Sparkles size={14} strokeWidth={2.5} />,      onClick: () => openCreateComposer('habit') },
+    { label: 'Manage tags', icon: <Tag size={14} strokeWidth={2.5} />,           onClick: () => navigate('/settings') },
+  ]
+
+  const fabItems = [
+    { label: 'New task',    description: 'One-off with a deadline',   icon: <ClipboardList size={22} strokeWidth={1.6} />, onClick: () => openCreateComposer('task'),  color: 'var(--color-brand-500)' },
+    { label: 'New habit',   description: 'Daily recurring routine',   icon: <Sparkles size={22} strokeWidth={1.6} />,      onClick: () => openCreateComposer('habit'), color: '#3b82f6' },
+    { label: 'Manage tags', description: 'Organise your habits',      icon: <Tag size={22} strokeWidth={1.6} />,           onClick: () => navigate('/settings'),       color: '#f97316' },
+  ]
+
   return (
     <div className="min-h-screen bg-app pb-28">
+      <DesktopPageHeader action={<ActionDropdown items={headerActions} />} />
       <div className="mx-auto max-w-3xl px-0">
         <div className="px-4 pt-4">
           <div className="hero-panel rounded-[30px] px-5 py-5">
@@ -167,14 +184,7 @@ export default function Tasks() {
           )}
         </div>
 
-        <button
-          onClick={() => openCreateComposer('task')}
-          className="fixed bottom-24 right-4 z-20 flex h-[58px] w-[58px] items-center justify-center rounded-[22px] text-[var(--text-on-brand)] transition-transform active:scale-95 lg:bottom-8 lg:right-8"
-          style={{ background: 'var(--color-brand-500)', boxShadow: 'var(--shadow-fab)' }}
-          aria-label="New task"
-        >
-          <Plus size={24} strokeWidth={2.5} />
-        </button>
+        <FabMenu items={fabItems} title="Add to tasks" />
       </div>
     </div>
   )

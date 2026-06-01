@@ -9,27 +9,11 @@ export default defineConfig({
       registerType: 'prompt',
       injectRegister: null,
       manifest: false,
-
-      workbox: {
+      strategies: 'injectManifest',
+      srcDir: 'src/pwa',
+      filename: 'sw.ts',
+      injectManifest: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        navigateFallback: '/index.html',
-        navigateFallbackDenylist: [/^\/api\//],
-        runtimeCaching: [
-          {
-            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|ico)$/,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'images',
-              expiration: { maxEntries: 60, maxAgeSeconds: 30 * 24 * 60 * 60 },
-            },
-          },
-          {
-            urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\//,
-            handler: 'StaleWhileRevalidate',
-            options: { cacheName: 'fonts' },
-          },
-        ],
-        dontCacheBustURLsMatching: /\.[0-9a-f]{8}\./,
       },
     }),
   ],
@@ -41,5 +25,19 @@ export default defineConfig({
   },
   server: {
     host: true,
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react':  ['react', 'react-dom', 'react-router-dom'],
+          'vendor-dexie':  ['dexie', 'dexie-react-hooks'],
+          'vendor-forms':  ['react-hook-form', '@hookform/resolvers', 'zod'],
+          'vendor-dates':  ['date-fns'],
+          'vendor-icons':  ['lucide-react'],
+          'vendor-supabase': ['@supabase/supabase-js'],
+        },
+      },
+    },
   },
 })

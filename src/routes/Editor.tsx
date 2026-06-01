@@ -9,13 +9,17 @@ import type { Habit, Task, World } from '@/types'
 import { MEASUREMENT_TYPES, PRIORITY_OPTIONS } from '@/lib/constants'
 import { habitsRepo } from '@/db/repos/habits'
 import { tasksRepo } from '@/db/repos/tasks'
-import { ConfirmDialog } from '@/components/ui'
+import { ConfirmDialog, Select, DatePicker, TimePicker } from '@/components/ui'
 import { toast } from '@/store/toastStore'
 import { ColorPicker } from '@/components/ColorPicker'
 import { IconPicker } from '@/components/IconPicker'
 import { TagInput } from '@/components/TagInput'
 import { RecurrencePicker } from '@/components/RecurrencePicker'
 import { MeasurementConfig } from '@/components/MeasurementConfig'
+import { useSession } from '@/auth/session'
+import { subscribeToPush } from '@/push/subscribe'
+import { reminderApi } from '@/push/api'
+import { ReminderPermissionPrompt } from '@/components/ReminderPermissionPrompt'
 
 type Mode = 'habit' | 'task'
 
@@ -61,8 +65,10 @@ export default function Editor({
     ? (type as Mode)
     : ((searchParams.get('type') as Mode) ?? 'habit'))
 
+  const { user } = useSession()
   const [mode, setMode] = useState<Mode>(initialMode)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showIOSPrompt, setShowIOSPrompt] = useState(false)
   const [loading, setLoading] = useState(isEdit)
   const [showAdvanced, setShowAdvanced] = useState(false)
 
@@ -164,12 +170,47 @@ export default function Editor({
       archived: false,
     } as Omit<Habit, 'id' | 'createdAt' | 'updatedAt' | 'dirty' | 'syncedAt' | 'deletedAt'>
 
+    let savedId: string
     if (isEdit) {
       await habitsRepo.update(id!, payload)
+      savedId = id!
       toast.success('Habit updated')
     } else {
-      await habitsRepo.create(payload)
+      const habit = await habitsRepo.create(payload)
+      savedId = habit.id
       toast.success('Habit created')
+    }
+
+    if (data.reminderTime && user) {
+      const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent)
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+
+      if (isIOS && !isStandalone) {
+        setShowIOSPrompt(true)
+        return
+      }
+
+      try {
+        const sub = await subscribeToPush()
+        if (sub) {
+          const daysOfWeek = data.recurrence.type === 'daily'
+            ? [0, 1, 2, 3, 4, 5, 6]
+            : (data.recurrence.daysOfWeek ?? [0, 1, 2, 3, 4, 5, 6])
+          await reminderApi.set({
+            entityType: 'habit',
+            entityId: savedId,
+            localTime: data.reminderTime,
+            daysOfWeek,
+          })
+        }
+      } catch {
+        // push failure is non-critical
+      }
+    } else if (!data.reminderTime) {
+      // If reminder was cleared, cancel any existing reminder
+      if (user && (isEdit)) {
+        reminderApi.cancel(id!).catch(() => null)
+      }
     }
 
     finish()
@@ -257,6 +298,7 @@ export default function Editor({
   }
 
   return (
+    <>
     <div className="min-h-screen bg-app pb-24">
       <div className="mx-auto max-w-2xl">
         <div className="flex items-center gap-3 px-4 pb-2 pt-4">
@@ -331,6 +373,11 @@ export default function Editor({
         />
       </div>
     </div>
+
+    {showIOSPrompt && (
+      <ReminderPermissionPrompt onDismiss={() => { setShowIOSPrompt(false); finish() }} />
+    )}
+    </>
   )
 }
 
@@ -473,11 +520,13 @@ function CompactHabitFields({
           </Field>
 
           <Field label="Measurement type">
-            <select {...form.register('measurementType')} className={inputCls()}>
-              {MEASUREMENT_TYPES.map(mt => (
-                <option key={mt.value} value={mt.value}>{mt.label}</option>
-              ))}
-            </select>
+            <Controller
+              name="measurementType"
+              control={form.control}
+              render={({ field }) => (
+                <Select value={field.value} onChange={field.onChange} options={MEASUREMENT_TYPES} />
+              )}
+            />
           </Field>
 
           <Field label="Context">
@@ -554,15 +603,33 @@ function CompactHabitFields({
             </Field>
 
             <Field label="Start date" error={form.formState.errors.startDate?.message}>
-              <input type="date" {...form.register('startDate')} className={inputCls()} />
+              <Controller
+                name="startDate"
+                control={form.control}
+                render={({ field }) => (
+                  <DatePicker value={field.value} onChange={field.onChange} />
+                )}
+              />
             </Field>
 
             <Field label="End date (optional)">
-              <input type="date" {...form.register('endDate')} className={inputCls()} />
+              <Controller
+                name="endDate"
+                control={form.control}
+                render={({ field }) => (
+                  <DatePicker value={field.value} onChange={field.onChange} />
+                )}
+              />
             </Field>
 
             <Field label="Reminder time (optional)">
-              <input type="time" {...form.register('reminderTime')} className={inputCls()} />
+              <Controller
+                name="reminderTime"
+                control={form.control}
+                render={({ field }) => (
+                  <TimePicker value={field.value} onChange={field.onChange} />
+                )}
+              />
             </Field>
           </div>
         </div>
@@ -596,7 +663,13 @@ function CompactTaskFields({
           </Field>
 
           <Field label="Due date" error={form.formState.errors.dueDate?.message}>
-            <input type="date" {...form.register('dueDate')} className={inputCls()} />
+            <Controller
+              name="dueDate"
+              control={form.control}
+              render={({ field }) => (
+                <DatePicker value={field.value} onChange={field.onChange} />
+              )}
+            />
           </Field>
 
           <Field label="Priority">
@@ -669,11 +742,13 @@ function CompactTaskFields({
             </Field>
 
             <Field label="Measurement type">
-              <select {...form.register('measurementType')} className={inputCls()}>
-                {MEASUREMENT_TYPES.map(mt => (
-                  <option key={mt.value} value={mt.value}>{mt.label}</option>
-                ))}
-              </select>
+              <Controller
+                name="measurementType"
+                control={form.control}
+                render={({ field }) => (
+                  <Select value={field.value} onChange={field.onChange} options={MEASUREMENT_TYPES} />
+                )}
+              />
             </Field>
 
             <Controller
@@ -689,7 +764,13 @@ function CompactTaskFields({
             />
 
             <Field label="Due time (optional)">
-              <input type="time" {...form.register('dueTime')} className={inputCls()} />
+              <Controller
+                name="dueTime"
+                control={form.control}
+                render={({ field }) => (
+                  <TimePicker value={field.value} onChange={field.onChange} />
+                )}
+              />
             </Field>
           </div>
         </div>
@@ -752,11 +833,13 @@ function FullHabitFields({ form }: { form: ReturnType<typeof useForm<HabitFormVa
       </Field>
 
       <Field label="Measurement type">
-        <select {...form.register('measurementType')} className={inputCls()}>
-          {MEASUREMENT_TYPES.map(mt => (
-            <option key={mt.value} value={mt.value}>{`${mt.label} - ${mt.description}`}</option>
-          ))}
-        </select>
+        <Controller
+          name="measurementType"
+          control={form.control}
+          render={({ field }) => (
+            <Select value={field.value} onChange={field.onChange} options={MEASUREMENT_TYPES} />
+          )}
+        />
       </Field>
 
       <Controller
@@ -785,15 +868,33 @@ function FullHabitFields({ form }: { form: ReturnType<typeof useForm<HabitFormVa
       </Field>
 
       <Field label="Start date" error={form.formState.errors.startDate?.message}>
-        <input type="date" {...form.register('startDate')} className={inputCls()} />
+        <Controller
+          name="startDate"
+          control={form.control}
+          render={({ field }) => (
+            <DatePicker value={field.value} onChange={field.onChange} />
+          )}
+        />
       </Field>
 
       <Field label="End date (optional)">
-        <input type="date" {...form.register('endDate')} className={inputCls()} />
+        <Controller
+          name="endDate"
+          control={form.control}
+          render={({ field }) => (
+            <DatePicker value={field.value} onChange={field.onChange} />
+          )}
+        />
       </Field>
 
       <Field label="Reminder time (optional)">
-        <input type="time" {...form.register('reminderTime')} className={inputCls()} />
+        <Controller
+          name="reminderTime"
+          control={form.control}
+          render={({ field }) => (
+            <TimePicker value={field.value} onChange={field.onChange} />
+          )}
+        />
       </Field>
     </>
   )
@@ -859,11 +960,13 @@ function FullTaskFields({
       </Field>
 
       <Field label="Measurement type">
-        <select {...form.register('measurementType')} className={inputCls()}>
-          {MEASUREMENT_TYPES.map(mt => (
-            <option key={mt.value} value={mt.value}>{`${mt.label} - ${mt.description}`}</option>
-          ))}
-        </select>
+        <Controller
+          name="measurementType"
+          control={form.control}
+          render={({ field }) => (
+            <Select value={field.value} onChange={field.onChange} options={MEASUREMENT_TYPES} />
+          )}
+        />
       </Field>
 
       <Controller
@@ -879,11 +982,23 @@ function FullTaskFields({
       />
 
       <Field label="Due date" error={form.formState.errors.dueDate?.message}>
-        <input type="date" {...form.register('dueDate')} className={inputCls()} />
+        <Controller
+          name="dueDate"
+          control={form.control}
+          render={({ field }) => (
+            <DatePicker value={field.value} onChange={field.onChange} />
+          )}
+        />
       </Field>
 
       <Field label="Due time (optional)">
-        <input type="time" {...form.register('dueTime')} className={inputCls()} />
+        <Controller
+          name="dueTime"
+          control={form.control}
+          render={({ field }) => (
+            <TimePicker value={field.value} onChange={field.onChange} />
+          )}
+        />
       </Field>
 
       <Field label="Priority">

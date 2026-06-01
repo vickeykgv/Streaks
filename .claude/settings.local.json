@@ -15,7 +15,29 @@
       "Bash(cat tailwind.config.js)",
       "Bash(cat tailwind.config.ts)",
       "Bash(grep -E \"\\\\.tsx$\")",
-      "Bash(node scripts/generate-icons.js)"
+      "Bash(node scripts/generate-icons.js)",
+      "Bash(node *)",
+      "WebFetch(domain:api.anthropic.com)",
+      "Bash(gunzip -c \"C:\\\\Users\\\\vicke\\\\.claude\\\\projects\\\\D--Projects-habit-tracker\\\\3eb23146-8d94-4a07-9cdc-f1aa2d4ea653\\\\tool-results\\\\webfetch-1777322937128-dtegy8.bin\")",
+      "Read(//tmp/**)",
+      "Bash(gunzip -c \"C:/Users/vicke/.claude/projects/D--Projects-habit-tracker/3eb23146-8d94-4a07-9cdc-f1aa2d4ea653/tool-results/webfetch-1777322937128-dtegy8.bin\")",
+      "Read(//c/Users/vicke/AppData/Local/Temp/**)",
+      "Bash(mkdir -p \"C:/Users/vicke/AppData/Local/Temp/cartly_extract\")",
+      "Bash(tar -xf \"C:/Users/vicke/.claude/projects/D--Projects-habit-tracker/3eb23146-8d94-4a07-9cdc-f1aa2d4ea653/tool-results/webfetch-1777322937128-dtegy8.bin\" -C \"C:/Users/vicke/AppData/Local/Temp/cartly_extract\")",
+      "PowerShell(Get-ChildItem -Recurse \"C:\\\\Users\\\\vicke\\\\AppData\\\\Local\\\\Temp\\\\cartly_extract\" | ForEach-Object { $_.FullName })",
+      "Bash(where magick *)",
+      "Bash(where convert *)",
+      "Bash(node -e \"console.log\\(require\\('sharp'\\).format\\)\")",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(git commit *)",
+      "Bash(Get-ChildItem -Path \"D:\\\\Projects\\\\habit-tracker\\\\supabase\\\\migrations\" -File)",
+      "Bash(Sort-Object Name)",
+      "Bash(dir D:Projectshabit-trackersupabase *)",
+      "PowerShell(Rename-Item *)",
+      "Bash(git fetch *)",
+      "Bash(powershell -Command ' *)"
     ]
   }
 }
