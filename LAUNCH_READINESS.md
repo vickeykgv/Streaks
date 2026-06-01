@@ -8,7 +8,7 @@
 
 ## TL;DR
 
-The app is in good shape structurally: clean production build, 153 passing unit
+The app is in good shape structurally: clean production build, 69 passing unit
 tests, no stray TODOs, a real PWA, a well-engineered last-write-wins sync engine,
 and **Row-Level Security enabled on all server tables** (users cannot read each
 other's data — the #1 silent multi-user killer is already handled).

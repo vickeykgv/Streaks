@@ -12,7 +12,7 @@ interface BadgeProps {
 const badgeStyles: Record<BadgeVariant, string> = {
   default:         'bg-surface2 text-[var(--text-secondary)] border border-[var(--border-subtle)]',
   brand:           'bg-brand-100 text-brand-700',
-  done:            'bg-[var(--color-done-bg)] text-[var(--color-done)]',
+  done:            'bg-[var(--color-done-bg)] text-[var(--text-success)]',
   partial:         'bg-[var(--color-partial-bg)] text-[var(--color-partial)]',
   overdue:         'bg-[var(--color-overdue-bg)] text-[var(--color-overdue)]',
   skipped:         'bg-[var(--color-skipped-bg)] text-[var(--color-skipped)]',

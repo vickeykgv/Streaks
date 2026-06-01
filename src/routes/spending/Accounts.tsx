@@ -104,7 +104,7 @@ export default function SpendingAccounts() {
               {accounts.length} account{accounts.length !== 1 ? 's' : ''} · net worth
               <span
                 className="ml-1.5 font-sans text-[14px] font-extrabold"
-                style={{ color: totalNet >= 0 ? 'var(--color-done)' : 'var(--color-overdue)' }}
+                style={{ color: totalNet >= 0 ? 'var(--text-success)' : 'var(--color-overdue)' }}
               >
                 {formatAmount(totalNet, currency)}
               </span>
@@ -183,7 +183,7 @@ export default function SpendingAccounts() {
                   </div>
 
                   {/* Balance */}
-                  <div className={cn('font-sans text-[22px] font-extrabold', isNeg ? 'text-[var(--color-overdue)]' : 'text-[var(--color-done)]')}>
+                  <div className={cn('font-sans text-[22px] font-extrabold', isNeg ? 'text-[var(--color-overdue)]' : 'text-[var(--text-success)]')}>
                     {formatAmount(balance, currency)}
                   </div>
                   <div className="mt-0.5 font-body text-[11px] text-[var(--text-tertiary)]">Current balance</div>

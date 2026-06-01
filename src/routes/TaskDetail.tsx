@@ -137,7 +137,7 @@ export default function TaskDetail() {
             background: isDone ? 'var(--color-done-bg)' : 'var(--color-skipped-bg)',
             borderColor: isDone ? '#22c55e33' : 'var(--color-skipped)33',
           }}>
-          <p className="font-sans font-bold text-[14px]" style={{ color: isDone ? 'var(--color-done)' : 'var(--color-skipped)' }}>
+          <p className="font-sans font-bold text-[14px]" style={{ color: isDone ? 'var(--text-success)' : 'var(--color-skipped)' }}>
             {isDone ? '✅ Completed' : '⏭ Skipped'}
             {task.completedAt && ` on ${format(new Date(task.completedAt), 'MMM d, yyyy')}`}
           </p>

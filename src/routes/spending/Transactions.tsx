@@ -623,7 +623,7 @@ export default function SpendingTransactions() {
                             {format(dateObj, 'EEE, MMM d')}
                           </span>
                         </div>
-                        <span className={cn('font-sans text-[12px] font-bold', dayTotal >= 0 ? 'text-[var(--color-done)]' : 'text-[var(--color-overdue)]')}>
+                        <span className={cn('font-sans text-[12px] font-bold', dayTotal >= 0 ? 'text-[var(--text-success)]' : 'text-[var(--color-overdue)]')}>
                           {dayTotal >= 0 ? '+' : '-'}{formatAmount(Math.abs(dayTotal), currency)}
                         </span>
                       </div>

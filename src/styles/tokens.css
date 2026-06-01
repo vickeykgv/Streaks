@@ -33,6 +33,7 @@
   --text-tertiary: #79675f; /* darkened for WCAG AA on surfaces (was #998a83, 3.2:1) */
   --text-inverse: #ffffff;
   --text-brand: #c40812;
+  --text-success: #0f7536; /* AA-compliant green for success TEXT (color-done #168f43 is 4.0:1, fails) */
   --text-on-brand: #ffffff;
   --text-on-success: #ffffff;
   --text-on-danger: #ffffff;
@@ -126,6 +127,7 @@
   --text-tertiary: #9a9a9a;
   --text-inverse: #141414;
   --text-brand: #ff7b82;
+  --text-success: #1db954; /* AA on dark bg (7.1:1); fills/borders still use --color-done */
   --text-on-brand: #ffffff;
   --text-on-success: #ffffff;
   --text-on-danger: #ffffff;

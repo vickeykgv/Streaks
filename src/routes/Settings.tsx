@@ -480,7 +480,7 @@ export default function Settings() {
                   className="font-sans text-[11px] font-bold uppercase tracking-wide px-2 py-1 rounded-full"
                   style={{
                     background: isAppBadgeSupported() ? 'rgba(34,197,94,0.14)' : 'var(--bg-surface-2)',
-                    color: isAppBadgeSupported() ? 'var(--color-done)' : 'var(--text-tertiary)',
+                    color: isAppBadgeSupported() ? 'var(--text-success)' : 'var(--text-tertiary)',
                   }}
                 >
                   {isAppBadgeSupported() ? 'Active' : 'Unavailable'}

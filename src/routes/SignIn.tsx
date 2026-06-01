@@ -84,7 +84,7 @@ export default function SignIn() {
             </p>
             <button
               onClick={() => setMagicSent(false)}
-              className="mt-4 font-body text-[13px] text-[var(--color-brand-400)]"
+              className="mt-4 font-body text-[13px] text-[var(--text-brand)]"
             >
               Try again
             </button>

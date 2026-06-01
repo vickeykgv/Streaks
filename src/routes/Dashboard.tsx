@@ -903,7 +903,7 @@ export default function Dashboard() {
                 className="font-sans font-extrabold text-[12px] px-2 py-0.5 rounded-full"
                 style={{
                   background: allDone && totalToday > 0 ? 'rgba(34,197,94,0.16)' : 'rgba(229,9,20,0.12)',
-                  color: allDone && totalToday > 0 ? 'var(--color-done)' : 'var(--text-secondary)',
+                  color: allDone && totalToday > 0 ? 'var(--text-success)' : 'var(--text-secondary)',
                 }}
               >
                 {pct}%
