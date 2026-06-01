@@ -293,11 +293,11 @@ export default function TransactionEditor({
           <input {...register('payee')} className={inputCls} placeholder="e.g. Zomato, Amazon..." />
         </Field>
 
-        <Field label="Note" error={errors.note?.message}>
+        <Field label="What was this for?" error={errors.note?.message}>
           <textarea
             {...register('note')}
             className="min-h-[80px] w-full resize-none rounded-xl border border-[var(--border-subtle)] bg-surface px-3.5 py-3 font-sans text-[14px] text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--color-brand-500)]"
-            placeholder="Optional note..."
+            placeholder="e.g. groceries for the week, birthday gift, fuel…"
           />
         </Field>
 
