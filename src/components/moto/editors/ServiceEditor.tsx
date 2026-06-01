@@ -303,11 +303,11 @@ export function ServiceEditor({ id, vehicleId, onClose, onSaved }: ServiceEditor
           </div>
         )}
 
-        {/* Note */}
-        <Field label="Note — optional">
+        {/* What was done */}
+        <Field label="What did you get done? — optional">
           <textarea {...register('note')} rows={2}
             className="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface-2)] px-3.5 py-2.5 font-body text-[14px] text-[var(--text-primary)] outline-none resize-none focus:border-[var(--color-brand-500)]"
-            placeholder="Any remarks…"
+            placeholder="e.g. oil + filter change, chain clean, brake pads…"
           />
         </Field>
 
