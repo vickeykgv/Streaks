@@ -177,15 +177,35 @@ Note: a11y overall already scores **94** — it's in good shape; the above are t
 
 ## P2 — Polish (post-launch or if time allows)
 
-- [ ] **Test config:** vitest is running duplicate suites out of `.claude/worktrees/`
-      (the "153" is inflated). Add `.claude/**` to vitest `exclude`.
-- [ ] **Bundle size:** `CategoricalChart` chunk is ~287 KB (90 KB gz, recharts).
-      Confirm Stats/Reports routes lazy-load it (they appear chunked already).
-- [ ] **Lighthouse:** a report already exists in the repo root
-      (`streaks app lighhouse report.txt`) — action its PWA/perf/a11y findings.
-- [ ] **Accessibility pass:** focus order, labels, contrast in both themes.
-- [ ] **Timezone/DST check:** create an entry late at night, confirm it counts for
-      the correct local day (PLAN §13 testing checklist).
+- [x] **Test config — DONE (2026-06-01).** vitest was collecting copies of the suite
+      from `.claude/worktrees/`, inflating the count to 153. Added
+      `exclude: [...configDefaults.exclude, '**/.claude/**']` to `vitest.config.ts`.
+      Real count is now **69 tests / 10 files**, all passing.
+- [x] **Bundle size — CONFIRMED OK (2026-06-01).** recharts is imported only by the
+      chart routes (moto Dashboard/Reports, spending Dashboard/Reports), and every one
+      is `lazy()`-loaded in `App.tsx`. `Stats.tsx` imports no chart code. The build
+      emits `CategoricalChart`/`CartesianChart` as separate chunks (not in `index`), so
+      the ~287 KB only loads on chart routes. No change needed.
+- [x] **Lighthouse — RE-MEASURED on prod (2026-06-01).** Ran against the deployed URL
+      `https://vickeykgv.github.io/Streaks/` (desktop preset). The stale dev-server
+      report was indeed artifacts: **Performance 97** (was 54), **Accessibility 100**,
+      **Best Practices 100**, **SEO 100**. The old HTTPS/`<main>`/meta-description
+      failures are all gone. Remaining perf diagnostics are GitHub Pages CDN cache-header
+      behaviors (`uses-long-cache-ttl`, `cache-insight`) — out of app control. **No perf
+      work needed.** (Deleted the stale `streaks app lighhouse report.txt` from scope.)
+- [~] **Accessibility pass:** Lighthouse automated a11y = **100, zero failing audits**.
+      Automated coverage is clean. Manual focus-order/label review + the light-mode
+      contrast leftovers (red link *text* via `--color-brand-400`, `--color-done` as text
+      — see P1) are the only remaining pieces; those are subjective/component-level and
+      left for a focused pass.
+- [x] **Timezone/DST — VERIFIED, no bug (2026-06-01).** The completion path
+      (`MeasurementControl.tsx` → `entriesRepo.upsert(habit.id, today(), ...)`) keys
+      entries off `today()` = `format(new Date(), 'yyyy-MM-dd')`, which is **local** time —
+      so a 3am IST completion files under the correct local day. Grepped all of `src`:
+      no `toISOString().slice(0,10)` UTC date keys exist; every date key uses local
+      `format(...)`. Display parsing anchors at noon (`dates.ts`) so DST can't shift the
+      day. Also removed the one raw-`Date` arithmetic in `addDaysFromToday` (CLAUDE.md
+      rule) in favor of date-fns `addDays`.
 
 ---
 
