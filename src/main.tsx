@@ -7,8 +7,17 @@ import { initServiceWorker } from '@/pwa/registerSW'
 import { useAppStore } from '@/store/appStore'
 import { authClient } from '@/auth/client'
 import { useSession } from '@/auth/session'
+import { logError } from '@/lib/errorLog'
 
 initTheme()
+
+// Global error reporting — capture uncaught errors and promise rejections.
+window.addEventListener('error', (e) => {
+  void logError(e.error ?? e.message, 'window.onerror')
+})
+window.addEventListener('unhandledrejection', (e) => {
+  void logError(e.reason, 'unhandledrejection')
+})
 
 if (import.meta.env.DEV) {
   import('./db/seed').then(({ seedIfEmpty }) => seedIfEmpty())

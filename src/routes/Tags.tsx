@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Plus, Trash2, Check } from 'lucide-react'
+import { Plus, Trash2, Check, Pencil, X } from 'lucide-react'
 import { tagsRepo } from '@/db/repos/tags'
 import { habitsRepo } from '@/db/repos/habits'
 import { tasksRepo } from '@/db/repos/tasks'
 import { TAG_COLORS } from '@/lib/constants'
+import { DesktopPageHeader } from '@/components/DesktopPageHeader'
 import type { Tag } from '@/types'
 
 export default function Tags() {
@@ -48,11 +49,17 @@ export default function Tags() {
 
   return (
     <div className="min-h-screen bg-app pb-24">
-      <div className="max-w-3xl mx-auto">
-      <div className="px-5 pt-3">
-        <div className="font-body text-[12px] font-medium text-[var(--text-tertiary)]">{tags.length} tags</div>
-        <div className="font-sans text-[28px] font-extrabold text-[var(--text-primary)] tracking-tight">Tags</div>
-      </div>
+      <DesktopPageHeader />
+      <div className="mx-auto max-w-3xl px-0">
+        <div className="px-4 pt-4">
+          <div className="hero-panel rounded-[30px] px-5 py-5">
+            <div className="section-kicker mb-2">Label library</div>
+            <div className="font-sans text-[30px] font-extrabold tracking-tight text-[var(--text-primary)]">Tags</div>
+            <div className="mt-1 font-body text-[13px] text-[var(--text-secondary)]">
+              {tags.length} colour-coded labels to organise your habits and tasks.
+            </div>
+          </div>
+        </div>
 
       {/* Create new */}
       <div className="mx-4 mt-4 flex gap-2">
@@ -66,19 +73,19 @@ export default function Tags() {
         <button
           onClick={handleCreate}
           disabled={!newName.trim()}
-          className="w-11 h-11 rounded-xl bg-brand-500 text-white flex items-center justify-center disabled:opacity-40"
+          className="h-11 px-4 rounded-xl bg-brand-500 text-[var(--text-on-brand)] font-sans font-extrabold text-[14px] flex items-center gap-1.5 shadow-[var(--shadow-glow)] disabled:opacity-40 disabled:shadow-none transition-all active:scale-95"
         >
-          <Plus size={20} strokeWidth={2.5} />
+          <Plus size={18} strokeWidth={2.75} /> Add
         </button>
       </div>
 
       {/* Tags list */}
-      <div className="flex flex-col gap-2 px-4 mt-4">
+      <div className="flex flex-col gap-2.5 px-4 mt-4">
         {tags.length === 0 && (
-          <div className="py-16 text-center">
+          <div className="hero-panel rounded-[26px] py-16 text-center">
             <div className="text-[40px] mb-3">🏷️</div>
             <p className="font-sans font-bold text-[16px] text-[var(--text-primary)]">No tags yet</p>
-            <p className="font-body text-[13px] text-[var(--text-secondary)] mt-1">Create one above</p>
+            <p className="font-body text-[13px] text-[var(--text-secondary)] mt-1">Add your first tag above to start organising.</p>
           </div>
         )}
         {tags.map(tag => (
@@ -136,18 +143,23 @@ function TagRow({ tag, usage, onDelete }: { tag: Tag; usage: { habits: number; t
     setColorEditing(false)
   }
 
+  const totalUses = usage.habits + usage.tasks
+
   return (
-    <div className="bg-surface border border-[var(--border-subtle)] rounded-2xl overflow-hidden">
+    <div
+      className="group bg-surface border border-[var(--border-subtle)] rounded-2xl overflow-hidden transition-all hover:border-[var(--border-strong)] hover:shadow-[var(--shadow-glow)]"
+      style={{ borderLeft: `3px solid ${tag.color}` }}
+    >
       <div className="flex items-center gap-3 px-3.5 py-3">
-        {/* Color swatch */}
+        {/* Color swatch (opens palette) */}
         <button
           onClick={() => setColorEditing(o => !o)}
-          className="w-7 h-7 rounded-full shrink-0 transition-transform active:scale-90"
-          style={{ background: tag.color, boxShadow: colorEditing ? `0 0 0 3px ${tag.color}44` : 'none' }}
-          aria-label="Change color"
+          className="w-8 h-8 rounded-full shrink-0 transition-transform active:scale-90"
+          style={{ background: tag.color, boxShadow: colorEditing ? `0 0 0 3px ${tag.color}44` : `0 0 0 1px ${tag.color}33` }}
+          aria-label="Change colour"
         />
 
-        {/* Name */}
+        {/* Name / chip preview */}
         {editing ? (
           <input
             value={draft}
@@ -160,28 +172,49 @@ function TagRow({ tag, usage, onDelete }: { tag: Tag; usage: { habits: number; t
         ) : (
           <button
             onClick={() => { setDraft(tag.name); setEditing(true) }}
-            className="flex-1 text-left font-sans font-bold text-[15px] text-[var(--text-primary)]"
+            className="flex-1 min-w-0 flex items-center gap-2.5 text-left"
           >
-            {tag.name}
+            <span
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full font-sans font-bold text-[12px] shrink-0 max-w-full truncate"
+              style={{ background: `${tag.color}18`, color: tag.color }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-current shrink-0" />
+              <span className="truncate">{tag.name}</span>
+            </span>
+            <span className="font-body text-[12px] text-[var(--text-tertiary)] truncate">
+              {totalUses === 0
+                ? 'Unused'
+                : `${usage.habits} habit${usage.habits !== 1 ? 's' : ''} · ${usage.tasks} task${usage.tasks !== 1 ? 's' : ''}`}
+            </span>
           </button>
         )}
 
-        {/* Usage count */}
-        <span className="font-body text-[12px] text-[var(--text-tertiary)] shrink-0">
-          {usage.habits + usage.tasks} uses
-        </span>
-
+        {/* Actions */}
         {editing ? (
-          <button onClick={saveName} className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{ background: 'var(--color-brand-500)' }}>
-            <Check size={14} color="#fff" strokeWidth={3} />
-          </button>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button onClick={() => { setDraft(tag.name); setEditing(false) }}
+              className="w-8 h-8 rounded-lg flex items-center justify-center bg-surface2 text-[var(--text-secondary)]"
+              aria-label="Cancel">
+              <X size={15} strokeWidth={2.5} />
+            </button>
+            <button onClick={saveName} className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--text-on-brand)]"
+              style={{ background: 'var(--color-brand-500)' }} aria-label="Save name">
+              <Check size={15} strokeWidth={3} />
+            </button>
+          </div>
         ) : (
-          <button onClick={onDelete}
-            className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{ background: 'var(--bg-surface-2)' }}>
-            <Trash2 size={14} color="var(--color-overdue)" />
-          </button>
+          <div className="flex items-center gap-1.5 shrink-0 opacity-60 transition-opacity group-hover:opacity-100">
+            <button onClick={() => { setDraft(tag.name); setEditing(true) }}
+              className="w-8 h-8 rounded-lg flex items-center justify-center bg-surface2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+              aria-label="Rename tag">
+              <Pencil size={14} strokeWidth={2.25} />
+            </button>
+            <button onClick={onDelete}
+              className="w-8 h-8 rounded-lg flex items-center justify-center bg-surface2 hover:bg-[var(--color-overdue)]/10 transition-colors"
+              aria-label="Delete tag">
+              <Trash2 size={14} color="var(--color-overdue)" strokeWidth={2.25} />
+            </button>
+          </div>
         )}
       </div>
 

@@ -8,6 +8,7 @@ import { openMotoEditor } from '@/store/motoEditor'
 import { EmptyState, ConfirmDialog } from '@/components/ui'
 import { VehicleSwitcher } from '@/components/moto/VehicleSwitcher'
 import { DesktopPageHeader } from '@/components/DesktopPageHeader'
+import { PageHeader } from '@/components/PageHeader'
 import { ActionDropdown } from '@/components/ActionDropdown'
 import { useMotoActions } from '@/hooks/useMotoActions'
 import { cn } from '@/lib/utils'
@@ -286,12 +287,8 @@ export default function MotoVehicles() {
       <div className="mx-auto max-w-3xl">
 
         {/* Header */}
-        <div className="px-4 pt-5 pb-2">
-          <div className="section-kicker mb-1">Moto</div>
-          <h1 className="font-sans text-[28px] font-extrabold tracking-tight text-[var(--text-primary)]">Garage</h1>
-          <p className="mt-0.5 font-body text-[13px] text-[var(--text-secondary)]">
-            Your vehicles — tap a card to edit, or add a new one.
-          </p>
+        <div className="px-4 pt-4">
+          <PageHeader kicker="Moto" title="Garage" description="Your vehicles — tap a card to edit, or add a new one." />
         </div>
 
         {/* Vehicle switcher */}

@@ -174,9 +174,14 @@ export default function Stats() {
       <div className="mx-auto max-w-2xl px-4">
 
         {/* Header */}
-        <div className="pt-4 pb-2">
-          <div className="font-body text-[12px] font-medium text-[var(--text-tertiary)]">Last 90 days</div>
-          <div className="font-sans text-[28px] font-extrabold tracking-tight text-[var(--text-primary)]">Stats</div>
+        <div className="pt-4">
+          <div className="hero-panel rounded-[30px] px-5 py-5">
+            <div className="section-kicker mb-2">Progress insights</div>
+            <div className="font-sans text-[30px] font-extrabold tracking-tight text-[var(--text-primary)]">Stats</div>
+            <div className="mt-1 font-body text-[13px] text-[var(--text-secondary)]">
+              Your last 90 days of streaks, completion, and activity at a glance.
+            </div>
+          </div>
         </div>
 
         {/* KPI row */}

@@ -8,6 +8,7 @@ import { getDocumentStatus, type DocStatus } from '@/lib/moto/documentStatus'
 import { VehicleSwitcher } from '@/components/moto/VehicleSwitcher'
 import { EmptyState } from '@/components/ui'
 import { DesktopPageHeader } from '@/components/DesktopPageHeader'
+import { PageHeader } from '@/components/PageHeader'
 import { ActionDropdown } from '@/components/ActionDropdown'
 import { useMotoActions } from '@/hooks/useMotoActions'
 import { format, parseISO } from 'date-fns'
@@ -117,6 +118,7 @@ export default function MotoDocuments() {
     <div className="min-h-screen bg-app">
       <DesktopPageHeader action={<ActionDropdown items={motoActions} />} />
       <div className="mx-auto w-full max-w-3xl px-4 py-6 pb-28">
+      <PageHeader kicker="Moto" title="Documents" description="Insurance, registration, and other paperwork in one place." className="mb-4" />
       <div className="flex items-center justify-between mb-3">
         <VehicleSwitcher />
         <button

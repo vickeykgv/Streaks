@@ -8,6 +8,7 @@ import { getPartDueStatus, type DueStatus } from '@/lib/moto/partsLife'
 import { VehicleSwitcher } from '@/components/moto/VehicleSwitcher'
 import { EmptyState } from '@/components/ui'
 import { DesktopPageHeader } from '@/components/DesktopPageHeader'
+import { PageHeader } from '@/components/PageHeader'
 import { ActionDropdown } from '@/components/ActionDropdown'
 import { useMotoActions } from '@/hooks/useMotoActions'
 import { format, parseISO } from 'date-fns'
@@ -100,6 +101,7 @@ export default function MotoParts() {
     <div className="min-h-screen bg-app">
       <DesktopPageHeader action={<ActionDropdown items={motoActions} />} />
       <div className="mx-auto w-full max-w-3xl px-4 py-6 pb-28">
+      <PageHeader kicker="Moto" title="Parts" description="Track spare part replacements and their expected life." className="mb-4" />
       <VehicleSwitcher />
 
       {!activeVehicleId && (

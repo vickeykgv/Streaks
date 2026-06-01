@@ -498,7 +498,7 @@ export default function Settings() {
             <SettingRow
               icon={<span className="text-[16px]">📱</span>}
               label="Version"
-              right={<span className="font-body text-[13px] text-[var(--text-tertiary)]">1.0.0</span>}
+              right={<span className="font-body text-[13px] text-[var(--text-tertiary)]">1.0.1</span>}
             />
           </SectionCard>
         </div>

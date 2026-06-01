@@ -4,6 +4,7 @@ import { settingsRepo } from '@/db/repos/settings'
 import { pullChanges, pushChanges } from './client'
 import { useSession } from '@/auth/session'
 import { useAppStore } from '@/store/appStore'
+import { logError } from '@/lib/errorLog'
 
 type SyncRecord = { id: string; updatedAt: number; deletedAt?: number; syncedAt?: number; dirty: boolean }
 
@@ -183,6 +184,7 @@ export async function syncNow(): Promise<void> {
   } catch (err) {
     console.error('[Sync] Failed:', err)
     useAppStore.getState().setSyncError(true)
+    void logError(err, 'sync')
   } finally {
     syncInProgress = false
     useAppStore.getState().setSyncing(false)

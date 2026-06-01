@@ -34,12 +34,14 @@ export function SyncStatusBadge() {
     return (
       <button
         onClick={() => syncNow()}
-        className="flex items-center gap-1.5 px-2 py-1 rounded-full"
+        className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
         style={{ background: 'var(--color-overdue-bg)' }}
-        title="Sync error — tap to retry"
+        title="Couldn't sync — your changes are saved on this device and will retry automatically. Tap to retry now."
       >
         <AlertTriangle size={11} style={{ color: 'var(--color-overdue)' }} />
-        <span className="sr-only">Sync error — tap to retry</span>
+        <span className="font-sans text-[11px] font-bold" style={{ color: 'var(--color-overdue)' }}>
+          Sync failed · Retry
+        </span>
       </button>
     )
   }

@@ -7,6 +7,7 @@ import { openMotoEditor } from '@/store/motoEditor'
 import { VehicleSwitcher } from '@/components/moto/VehicleSwitcher'
 import { EmptyState } from '@/components/ui'
 import { DesktopPageHeader } from '@/components/DesktopPageHeader'
+import { PageHeader } from '@/components/PageHeader'
 import { ActionDropdown } from '@/components/ActionDropdown'
 import { useMotoActions } from '@/hooks/useMotoActions'
 import { format, parseISO } from 'date-fns'
@@ -89,6 +90,7 @@ export default function MotoIssues() {
     <div className="min-h-screen bg-app">
       <DesktopPageHeader action={<ActionDropdown items={motoActions} />} />
       <div className="mx-auto w-full max-w-3xl px-4 py-6 pb-28">
+      <PageHeader kicker="Moto" title="Issues" description="Track problems and niggles to fix on your vehicles." className="mb-4" />
       <VehicleSwitcher />
 
       {!activeVehicleId && (

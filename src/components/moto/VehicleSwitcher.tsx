@@ -18,37 +18,42 @@ export function VehicleSwitcher() {
   }
 
   return (
-    <div className="flex items-center gap-2 overflow-x-auto px-4 pb-3 scrollbar-none">
-      {vehicles.map(v => {
-        const active = v.id === activeVehicleId
-        return (
-          <button
-            key={v.id}
-            onClick={() => setActiveVehicle(v.id)}
-            className={cn(
-              'flex shrink-0 items-center gap-1.5 rounded-2xl px-3 py-2 transition-all font-sans text-[12px] font-bold',
-              active
-                ? 'text-white shadow-[0_2px_8px_rgba(229,9,20,0.35)]'
-                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]',
-            )}
-            style={{
-              background: active ? v.color || 'var(--color-brand-500)' : 'var(--bg-surface-2)',
-              border: active ? 'none' : '1px solid var(--border-subtle)',
-            }}
-          >
-            <span className="text-[14px]">{VEHICLE_TYPE_EMOJI[v.vehicleType] ?? '🚗'}</span>
-            <span>{v.name}</span>
-          </button>
-        )
-      })}
-      <button
-        onClick={() => openMotoEditor({ kind: 'vehicle' })}
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-[var(--bg-surface-2)] text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]"
-        style={{ border: '1px solid var(--border-subtle)' }}
-        aria-label="Add vehicle"
+    <div className="overflow-x-auto px-4 pb-3 scrollbar-none">
+      {/* Connected segmented control — one contained track, left-aligned */}
+      <div
+        className="inline-flex items-center gap-1 rounded-2xl p-1"
+        style={{ background: 'var(--bg-surface-2)', border: '1px solid var(--border-subtle)' }}
       >
-        <Plus size={14} strokeWidth={2.5} />
-      </button>
+        {vehicles.map(v => {
+          const active = v.id === activeVehicleId
+          return (
+            <button
+              key={v.id}
+              onClick={() => setActiveVehicle(v.id)}
+              className={cn(
+                'flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-1.5 transition-all font-sans text-[12px] font-bold',
+                active
+                  ? 'text-white shadow-[0_2px_8px_rgba(0,0,0,0.18)]'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]',
+              )}
+              style={active ? { background: v.color || 'var(--color-brand-500)' } : undefined}
+            >
+              <span className="text-[14px]">{VEHICLE_TYPE_EMOJI[v.vehicleType] ?? '🚗'}</span>
+              <span>{v.name}</span>
+            </button>
+          )
+        })}
+
+        {/* Divider + add button, inside the same track */}
+        <div className="mx-0.5 h-5 w-px shrink-0" style={{ background: 'var(--border-subtle)' }} />
+        <button
+          onClick={() => openMotoEditor({ kind: 'vehicle' })}
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-[var(--text-tertiary)] transition-colors hover:bg-[var(--bg-surface-1)] hover:text-[var(--text-primary)]"
+          aria-label="Add vehicle"
+        >
+          <Plus size={15} strokeWidth={2.5} />
+        </button>
+      </div>
     </div>
   )
 }

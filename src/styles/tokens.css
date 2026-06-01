@@ -30,7 +30,7 @@
 
   --text-primary: #261d1b;
   --text-secondary: #6a5c56;
-  --text-tertiary: #998a83;
+  --text-tertiary: #79675f; /* darkened for WCAG AA on surfaces (was #998a83, 3.2:1) */
   --text-inverse: #ffffff;
   --text-brand: #c40812;
   --text-on-brand: #ffffff;
@@ -46,12 +46,12 @@
   --color-done-bg: rgba(22, 143, 67, 0.13);
   --color-partial: #cf8a2a;
   --color-partial-bg: rgba(207, 138, 42, 0.15);
-  --color-overdue: #d51f2a;
+  --color-overdue: #b00d16; /* darkened for WCAG AA as text on light bg (was #d51f2a, 3.4:1) */
   --color-overdue-bg: rgba(213, 31, 42, 0.11);
   --color-skipped: #7c756f;
   --color-skipped-bg: rgba(124, 117, 111, 0.13);
 
-  --color-priority-high: #d51f2a;
+  --color-priority-high: #b00d16;
   --color-priority-med: #cf8a2a;
   --color-priority-low: #8c847e;
 

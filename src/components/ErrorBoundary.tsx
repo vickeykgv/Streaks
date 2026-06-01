@@ -1,5 +1,6 @@
-import { Component, type ReactNode } from 'react'
+import { Component, type ErrorInfo, type ReactNode } from 'react'
 import { RefreshCw } from 'lucide-react'
+import { logError } from '@/lib/errorLog'
 
 interface Props {
   children: ReactNode
@@ -15,6 +16,15 @@ export class ErrorBoundary extends Component<Props, State> {
 
   static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error }
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo): void {
+    void logError(
+      Object.assign(error, {
+        stack: `${error.stack ?? error.message}\n--- componentStack ---${info.componentStack ?? ''}`,
+      }),
+      'react-boundary',
+    )
   }
 
   render() {
