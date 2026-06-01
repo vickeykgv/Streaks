@@ -14,31 +14,32 @@
   --color-accent-2: #1a9d4a;
   --color-accent-3: #d98a1e;
 
-  /* Light theme (default): warm paper neutrals keep glare down; red stays the hero.
-     .dark overrides everything below back to the dark palette. */
-  --bg-app: #f1eae6;
-  --bg-app-rgb: 241, 234, 230;
-  --bg-surface: rgba(252, 248, 246, 0.94);
+  /* Light theme (default): a toned warm-greige page lets near-white panels read
+     as distinct, lifted objects. Red stays the hero. .dark overrides all below. */
+  --bg-app: #e9e1db;
+  --bg-app-rgb: 233, 225, 219;
+  --bg-surface: #fdfbfa;
   --bg-surface-strong: #ffffff;
-  --bg-surface-2: #f3ece8;
-  --bg-surface-3: #e8ded8;
-  --bg-overlay: rgba(36, 22, 20, 0.46);
+  --bg-surface-1: var(--bg-surface);
+  --bg-surface-2: #efe7e1;
+  --bg-surface-3: #e3dad3;
+  --bg-overlay: rgba(32, 20, 18, 0.5);
   --bg-base: var(--bg-app);
   --bg-hero:
-    #fdf9f7;
+    #fffaf8;
 
-  --text-primary: #2a211f;
-  --text-secondary: #6a5c57;
-  --text-tertiary: #9a8d87;
+  --text-primary: #261d1b;
+  --text-secondary: #6a5c56;
+  --text-tertiary: #998a83;
   --text-inverse: #ffffff;
   --text-brand: #c40812;
   --text-on-brand: #ffffff;
   --text-on-success: #ffffff;
   --text-on-danger: #ffffff;
 
-  --border-subtle: rgba(58, 32, 27, 0.09);
-  --border-default: rgba(58, 32, 27, 0.14);
-  --border-strong: rgba(58, 32, 27, 0.22);
+  --border-subtle: rgba(45, 26, 22, 0.1);
+  --border-default: rgba(45, 26, 22, 0.15);
+  --border-strong: rgba(45, 26, 22, 0.24);
   --border-brand: rgba(229, 9, 20, 0.3);
 
   --color-done: #168f43;
@@ -57,11 +58,11 @@
   --color-streak: #d98a1e;
   --color-streak-bg: rgba(217, 138, 30, 0.15);
 
-  --shadow-xs: 0 1px 2px rgba(60, 36, 30, 0.06);
-  --shadow-sm: 0 6px 18px rgba(60, 36, 30, 0.08);
-  --shadow-md: 0 14px 34px rgba(60, 36, 30, 0.1);
-  --shadow-lg: 0 22px 50px rgba(60, 36, 30, 0.12);
-  --shadow-card: 0 8px 24px rgba(60, 36, 30, 0.08);
+  --shadow-xs: 0 1px 2px rgba(45, 28, 22, 0.07);
+  --shadow-sm: 0 4px 14px rgba(45, 28, 22, 0.09);
+  --shadow-md: 0 12px 30px rgba(45, 28, 22, 0.11);
+  --shadow-lg: 0 22px 48px rgba(45, 28, 22, 0.14);
+  --shadow-card: 0 4px 16px rgba(45, 28, 22, 0.1);
   --shadow-soft: 0 16px 34px rgba(229, 9, 20, 0.12);
   --shadow-glow: 0 12px 28px rgba(229, 9, 20, 0.22);
   --shadow-fab: 0 16px 30px rgba(229, 9, 20, 0.26);
