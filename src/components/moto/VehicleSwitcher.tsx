@@ -14,18 +14,7 @@ export function VehicleSwitcher() {
   const { activeVehicleId, setActiveVehicle } = useMoto()
 
   if (vehicles.length === 0) {
-    return (
-      <div className="px-4 pb-3">
-        <button
-          onClick={() => openMotoEditor({ kind: 'vehicle' })}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl py-3 font-sans text-[13px] font-bold transition-all"
-          style={{ background: 'var(--bg-surface-2)', border: '1px dashed var(--border-subtle)', color: 'var(--text-secondary)' }}
-        >
-          <Plus size={15} strokeWidth={2.5} />
-          Add your first vehicle
-        </button>
-      </div>
-    )
+    return null
   }
 
   return (

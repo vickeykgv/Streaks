@@ -133,34 +133,50 @@ export default function MotoService() {
   const currentOdoKm = vehicle?.currentOdoKm ?? 0
 
   return (
-    <div className="min-h-screen bg-app">
+    <div className="min-h-screen pb-28 bg-app">
       <DesktopPageHeader action={<ActionDropdown items={motoActions} />} />
-      <div className="mx-auto w-full max-w-3xl px-4 py-6 pb-28">
-      <VehicleSwitcher />
+      <div className="mx-auto max-w-5xl">
 
-      {!activeVehicleId && (
-        <EmptyState
-          icon={<Wrench size={20} strokeWidth={1.8} />}
-          headline="No vehicle selected"
-          subheadline="Select or add a vehicle above to view service history."
-        />
-      )}
-
-      {activeVehicleId && services.length === 0 && (
-        <EmptyState
-          icon={<Wrench size={20} strokeWidth={1.8} />}
-          headline="No service records yet"
-          subheadline="Tap + to log your first service visit and track next due dates."
-        />
-      )}
-
-      {activeVehicleId && services.length > 0 && (
-        <div className="flex flex-col gap-1.5">
-          {services.map(s => (
-            <ServiceCard key={s.id} service={s} currentOdoKm={currentOdoKm} />
-          ))}
+        {/* Header */}
+        <div className="px-4 pt-5 pb-2">
+          <div className="section-kicker mb-1">Moto</div>
+          <h1 className="font-sans text-[28px] font-extrabold tracking-tight text-[var(--text-primary)]">Service</h1>
+          <p className="mt-0.5 font-body text-[13px] text-[var(--text-secondary)]">
+            Track service visits and upcoming maintenance due dates.
+          </p>
         </div>
-      )}
+
+        {/* Vehicle switcher */}
+        <div className="pt-2">
+          <VehicleSwitcher />
+        </div>
+
+        {/* Content */}
+        <div className="px-4 pt-3">
+          {!activeVehicleId && (
+            <EmptyState
+              icon={<Wrench size={20} strokeWidth={1.8} />}
+              headline="No vehicle selected"
+              subheadline="Select or add a vehicle above to view service history."
+            />
+          )}
+
+          {activeVehicleId && services.length === 0 && (
+            <EmptyState
+              icon={<Wrench size={20} strokeWidth={1.8} />}
+              headline="No service records yet"
+              subheadline="Tap + to log your first service visit and track next due dates."
+            />
+          )}
+
+          {activeVehicleId && services.length > 0 && (
+            <div className="flex flex-col gap-1.5">
+              {services.map(s => (
+                <ServiceCard key={s.id} service={s} currentOdoKm={currentOdoKm} />
+              ))}
+            </div>
+          )}
+        </div>
 
       </div>
     </div>

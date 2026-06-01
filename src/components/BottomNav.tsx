@@ -72,7 +72,7 @@ export function BottomNav() {
                   </div>
                   <span className={cn(
                     'text-[9px] font-sans tracking-[0.06em]',
-                    isActive ? 'font-extrabold' : 'font-semibold',
+                    isActive ? 'font-extrabold text-[var(--text-primary)]' : 'font-semibold',
                   )}>{label}</span>
                 </>
               )}

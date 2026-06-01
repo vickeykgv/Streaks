@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Trash2 } from 'lucide-react'
 import { documentSchema, type DocumentFormValues } from '@/lib/schemas/moto'
 import { documentsRepo } from '@/db/repos/moto/documents'
 import { vehiclesRepo } from '@/db/repos/moto/vehicles'
 import { toast } from '@/store/toastStore'
-import { ConfirmDialog } from '@/components/ui'
+import { ConfirmDialog, DatePicker } from '@/components/ui'
 import { useLiveQuery } from 'dexie-react-hooks'
 import type { DocumentType } from '@/types/moto'
 
@@ -43,7 +43,7 @@ export function DocumentEditor({ id, vehicleId: initVehicleId, onClose, onSaved 
 
   const vehicles = useLiveQuery(() => vehiclesRepo.getAll(), []) ?? []
 
-  const { register, handleSubmit, watch, setValue, reset, formState: { errors, isSubmitting } } = useForm<DocumentFormValues>({
+  const { register, handleSubmit, control, watch, setValue, reset, formState: { errors, isSubmitting } } = useForm<DocumentFormValues>({
     resolver: zodResolver(documentSchema),
     defaultValues: {
       type: initVehicleId ? 'insurance' : 'driving_license',
@@ -171,10 +171,18 @@ export function DocumentEditor({ id, vehicleId: initVehicleId, onClose, onSaved 
         {/* Issued + Expiry dates */}
         <div className="grid grid-cols-2 gap-2">
           <Field label="Issued on — optional">
-            <input type="date" {...register('issuedDate')} className={inputCls} />
+            <Controller
+              control={control}
+              name="issuedDate"
+              render={({ field }) => <DatePicker value={field.value} onChange={field.onChange} placeholder="Pick a date" />}
+            />
           </Field>
           <Field label="Expires on" error={errors.expiryDate?.message}>
-            <input type="date" {...register('expiryDate')} className={inputCls} />
+            <Controller
+              control={control}
+              name="expiryDate"
+              render={({ field }) => <DatePicker value={field.value} onChange={field.onChange} placeholder="Pick a date" />}
+            />
           </Field>
         </div>
 

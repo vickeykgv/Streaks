@@ -1,15 +1,17 @@
+import { lazy, Suspense } from 'react'
 import { Modal, BottomSheet } from '@/components/ui'
 import { useMotoEditor } from '@/store/motoEditor'
 import { useIsMobile } from '@/hooks/useIsMobile'
-import { VehicleEditor } from '@/components/moto/editors/VehicleEditor'
-import { FuelLogEditor } from '@/components/moto/editors/FuelLogEditor'
-import { ServiceEditor } from '@/components/moto/editors/ServiceEditor'
-import { PartEditor } from '@/components/moto/editors/PartEditor'
-import { IssueEditor } from '@/components/moto/editors/IssueEditor'
-import { NoteEditor } from '@/components/moto/editors/NoteEditor'
-import { DocumentEditor } from '@/components/moto/editors/DocumentEditor'
-import { VehicleDocEditor } from '@/components/moto/editors/VehicleDocEditor'
-import { MaintenanceItemEditor } from '@/components/moto/editors/MaintenanceItemEditor'
+
+const VehicleEditor        = lazy(() => import('@/components/moto/editors/VehicleEditor').then(m => ({ default: m.VehicleEditor })))
+const FuelLogEditor        = lazy(() => import('@/components/moto/editors/FuelLogEditor').then(m => ({ default: m.FuelLogEditor })))
+const ServiceEditor        = lazy(() => import('@/components/moto/editors/ServiceEditor').then(m => ({ default: m.ServiceEditor })))
+const PartEditor           = lazy(() => import('@/components/moto/editors/PartEditor').then(m => ({ default: m.PartEditor })))
+const IssueEditor          = lazy(() => import('@/components/moto/editors/IssueEditor').then(m => ({ default: m.IssueEditor })))
+const NoteEditor           = lazy(() => import('@/components/moto/editors/NoteEditor').then(m => ({ default: m.NoteEditor })))
+const DocumentEditor       = lazy(() => import('@/components/moto/editors/DocumentEditor').then(m => ({ default: m.DocumentEditor })))
+const VehicleDocEditor     = lazy(() => import('@/components/moto/editors/VehicleDocEditor').then(m => ({ default: m.VehicleDocEditor })))
+const MaintenanceItemEditor = lazy(() => import('@/components/moto/editors/MaintenanceItemEditor').then(m => ({ default: m.MaintenanceItemEditor })))
 
 export function MotoEditorHost() {
   const { editor, close } = useMotoEditor()
@@ -76,14 +78,18 @@ export function MotoEditorHost() {
             ✕
           </button>
         </div>
-        {content}
+        <Suspense fallback={null}>
+          {content}
+        </Suspense>
       </BottomSheet>
     )
   }
 
   return (
     <Modal open={open} onClose={close} title={title} size="md">
-      {content}
+      <Suspense fallback={null}>
+        {content}
+      </Suspense>
     </Modal>
   )
 }

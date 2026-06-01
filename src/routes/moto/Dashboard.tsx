@@ -299,14 +299,12 @@ export default function MotoDashboard() {
     return (
       <div className="min-h-screen bg-app">
         <DesktopPageHeader action={<ActionDropdown items={motoActions} />} />
-        <div className="px-4 pt-4 pb-4">
-          <VehicleSwitcher />
-        </div>
         <div className="px-4 pb-6">
           <EmptyState
             icon={<Bike size={26} strokeWidth={1.8} />}
             headline="No vehicle selected"
             subheadline="Add your first vehicle to start tracking fuel, service, and costs."
+            action={{ label: '+ Add your first vehicle', onClick: () => openMotoEditor({ kind: 'vehicle' }) }}
             hero
           />
         </div>

@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Trash2 } from 'lucide-react'
 import { issueSchema, type IssueFormValues } from '@/lib/schemas/moto'
 import { issuesRepo } from '@/db/repos/moto/issues'
 import { toast } from '@/store/toastStore'
-import { ConfirmDialog } from '@/components/ui'
+import { ConfirmDialog, DatePicker } from '@/components/ui'
 import { format } from 'date-fns'
 import type { IssuePriority } from '@/types/moto'
 
@@ -42,7 +42,7 @@ export function IssueEditor({ id, vehicleId, onClose, onSaved }: IssueEditorProp
   const [showDelete, setShowDelete] = useState(false)
   const [isResolved, setIsResolved] = useState(false)
 
-  const { register, handleSubmit, watch, setValue, reset, formState: { errors, isSubmitting } } = useForm<IssueFormValues>({
+  const { register, handleSubmit, control, watch, setValue, reset, formState: { errors, isSubmitting } } = useForm<IssueFormValues>({
     resolver: zodResolver(issueSchema),
     defaultValues: {
       reportedAt: format(new Date(), 'yyyy-MM-dd'),
@@ -161,7 +161,11 @@ export function IssueEditor({ id, vehicleId, onClose, onSaved }: IssueEditorProp
         </Field>
 
         <Field label="Reported on" error={errors.reportedAt?.message}>
-          <input type="date" {...register('reportedAt')} className={inputCls} />
+          <Controller
+            control={control}
+            name="reportedAt"
+            render={({ field }) => <DatePicker value={field.value} onChange={field.onChange} />}
+          />
         </Field>
 
         {isEdit && (

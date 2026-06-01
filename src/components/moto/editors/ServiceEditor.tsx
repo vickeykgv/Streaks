@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Trash2 } from 'lucide-react'
 import { serviceSchema, type ServiceFormValues } from '@/lib/schemas/moto'
@@ -7,7 +7,7 @@ import { servicesRepo } from '@/db/repos/moto/services'
 import { issuesRepo } from '@/db/repos/moto/issues'
 import { vehiclesRepo } from '@/db/repos/moto/vehicles'
 import { toast } from '@/store/toastStore'
-import { ConfirmDialog } from '@/components/ui'
+import { ConfirmDialog, DatePicker } from '@/components/ui'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { format } from 'date-fns'
 import type { ServiceType } from '@/types/moto'
@@ -71,7 +71,7 @@ export function ServiceEditor({ id, vehicleId, onClose, onSaved }: ServiceEditor
     [vehicleId],
   ) ?? []
 
-  const { register, handleSubmit, watch, setValue, reset, formState: { errors, isSubmitting } } = useForm<ServiceFormValues>({
+  const { register, handleSubmit, control, watch, setValue, reset, formState: { errors, isSubmitting } } = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceSchema),
     defaultValues: {
       date: format(new Date(), 'yyyy-MM-dd'),
@@ -187,7 +187,11 @@ export function ServiceEditor({ id, vehicleId, onClose, onSaved }: ServiceEditor
         {/* Date + Odometer */}
         <div className="grid grid-cols-2 gap-2">
           <Field label="Date" error={errors.date?.message}>
-            <input type="date" {...register('date')} className={inputCls} />
+            <Controller
+              control={control}
+              name="date"
+              render={({ field }) => <DatePicker value={field.value} onChange={field.onChange} />}
+            />
           </Field>
           <Field label="Odometer (km)" error={errors.odoKm?.message}>
             <input type="number" {...register('odoKm')} className={inputCls} placeholder="0" />
@@ -238,7 +242,11 @@ export function ServiceEditor({ id, vehicleId, onClose, onSaved }: ServiceEditor
         {/* Next due */}
         <div className="grid grid-cols-2 gap-2">
           <Field label="Next due by date — optional">
-            <input type="date" {...register('nextDueDate')} className={inputCls} />
+            <Controller
+              control={control}
+              name="nextDueDate"
+              render={({ field }) => <DatePicker value={field.value} onChange={field.onChange} placeholder="Pick a date" />}
+            />
           </Field>
           <Field label="Next due by odo (km) — optional">
             <input type="number" {...register('nextDueOdoKm')} className={inputCls} placeholder="e.g. 15000" />

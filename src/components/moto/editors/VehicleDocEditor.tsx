@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ExternalLink, Trash2 } from 'lucide-react'
 import { vehicleDocSchema, type VehicleDocFormValues } from '@/lib/schemas/moto'
 import { vehicleDocsRepo } from '@/db/repos/moto/vehicleDocs'
 import { toast } from '@/store/toastStore'
-import { ConfirmDialog } from '@/components/ui'
+import { ConfirmDialog, DatePicker } from '@/components/ui'
 
 const inputCls = 'h-11 w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface-2)] px-3.5 font-sans text-[15px] font-semibold text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--color-brand-500)]'
 
@@ -33,7 +33,7 @@ export function VehicleDocEditor({ id, vehicleId, onClose, onSaved }: VehicleDoc
   const [loading, setLoading] = useState(isEdit)
   const [showDelete, setShowDelete] = useState(false)
 
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<VehicleDocFormValues>({
+  const { register, handleSubmit, control, reset, formState: { errors, isSubmitting } } = useForm<VehicleDocFormValues>({
     resolver: zodResolver(vehicleDocSchema),
   })
 
@@ -96,7 +96,11 @@ export function VehicleDocEditor({ id, vehicleId, onClose, onSaved }: VehicleDoc
         </Field>
 
         <Field label="Valid until — optional" error={errors.validUntil?.message}>
-          <input type="date" {...register('validUntil')} className={inputCls} />
+          <Controller
+            control={control}
+            name="validUntil"
+            render={({ field }) => <DatePicker value={field.value} onChange={field.onChange} placeholder="Pick a date" />}
+          />
         </Field>
 
         <Field label="Image / scan link — optional" error={errors.imageUrl?.message}>

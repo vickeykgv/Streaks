@@ -18,6 +18,7 @@ const habitsMainItems = [
   { to: '/habits', label: 'Habits',  Icon: List,     exact: false },
   { to: '/tasks',  label: 'Tasks',   Icon: Calendar, exact: false },
   { to: '/stats',  label: 'Stats',   Icon: BarChart2,exact: false },
+  { to: '/tags',   label: 'Tags',    Icon: Tag,      exact: false },
 ]
 
 const spendingMainItems = [
@@ -37,7 +38,6 @@ const motoMainItems = [
 ]
 
 const footerItems = [
-  { to: '/tags',     label: 'Tags',     Icon: Tag      },
   { to: '/settings', label: 'Settings', Icon: Settings },
 ]
 
@@ -190,23 +190,11 @@ export function SideNav() {
           <SideModuleSwitcher />
 
           {/* Footer nav */}
-          {activeModule === 'habits' && (
-            <div className="flex flex-col gap-0.5 px-2.5 py-3 shrink-0 border-t border-[var(--border-subtle)]">
-              {footerItems.map(({ to, label, Icon }) => (
-                <NavItem key={to} to={to} label={label} Icon={Icon} />
-              ))}
-            </div>
-          )}
-          {activeModule === 'spending' && (
-            <div className="flex flex-col gap-0.5 px-2.5 py-3 shrink-0 border-t border-[var(--border-subtle)]">
-              <NavItem to="/settings" label="Settings" Icon={Settings} />
-            </div>
-          )}
-          {activeModule === 'moto' && (
-            <div className="flex flex-col gap-0.5 px-2.5 py-3 shrink-0 border-t border-[var(--border-subtle)]">
-              <NavItem to="/settings" label="Settings" Icon={Settings} />
-            </div>
-          )}
+          <div className="flex flex-col gap-0.5 px-2.5 py-3 shrink-0 border-t border-[var(--border-subtle)]">
+            {footerItems.map(({ to, label, Icon }) => (
+              <NavItem key={to} to={to} label={label} Icon={Icon} />
+            ))}
+          </div>
 
         </div>
       </nav>

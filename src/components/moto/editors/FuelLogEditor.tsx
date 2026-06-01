@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Trash2, Zap, Gauge } from 'lucide-react'
 import { fuelLogSchema, type FuelLogFormValues } from '@/lib/schemas/moto'
 import { fuelLogsRepo } from '@/db/repos/moto/fuelLogs'
 import { vehiclesRepo } from '@/db/repos/moto/vehicles'
 import { toast } from '@/store/toastStore'
-import { ConfirmDialog } from '@/components/ui'
+import { ConfirmDialog, DatePicker } from '@/components/ui'
 import { format } from 'date-fns'
 import type { FuelType } from '@/types/moto'
 
@@ -86,7 +86,7 @@ export function FuelLogEditor({ id, vehicleId, onClose, onSaved }: FuelLogEditor
   const [vehicleOdo, setVehicleOdo] = useState<number | null>(null)
 
   const {
-    register, handleSubmit, watch, setValue, reset,
+    register, handleSubmit, control, watch, setValue, reset,
     formState: { errors, isSubmitting },
   } = useForm<FuelLogFormValues>({
     resolver: zodResolver(fuelLogSchema),
@@ -191,7 +191,11 @@ export function FuelLogEditor({ id, vehicleId, onClose, onSaved }: FuelLogEditor
         {/* Date + Odometer */}
         <div className="grid grid-cols-2 gap-2">
           <Field label="When" error={errors.date?.message}>
-            <input type="date" {...register('date')} className={plainInputCls} />
+            <Controller
+              control={control}
+              name="date"
+              render={({ field }) => <DatePicker value={field.value} onChange={field.onChange} />}
+            />
           </Field>
           <Field
             label="Odometer"

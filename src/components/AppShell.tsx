@@ -80,7 +80,7 @@ export function AppShell({ children }: AppShellProps) {
       {/* Main content — shifted right by the collapsed sidebar width on desktop */}
       <div className="lg:ml-[112px]">
         <MobileTopBar />
-        {children}
+        <main>{children}</main>
       </div>
 
       {/* Bottom nav — fixed at bottom, hidden on desktop */}

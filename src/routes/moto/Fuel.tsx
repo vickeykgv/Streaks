@@ -97,49 +97,65 @@ export default function MotoFuel() {
   const latestKmpl = efficiencySeries.length > 0 ? efficiencySeries[efficiencySeries.length - 1].kmpl : null
 
   return (
-    <div className="min-h-screen bg-app">
+    <div className="min-h-screen pb-28 bg-app">
       <DesktopPageHeader action={<ActionDropdown items={motoActions} />} />
-      <div className="mx-auto w-full max-w-3xl px-4 py-6 pb-28">
-      <VehicleSwitcher />
+      <div className="mx-auto max-w-5xl">
 
-      {activeVehicleId && logs.length > 0 && (
-        <div className="mb-4 grid grid-cols-2 gap-3">
-          <div className="rounded-2xl px-4 py-3" style={{ background: 'var(--bg-surface-2)' }}>
-            <div className="font-body text-[11px] font-medium text-[var(--text-tertiary)] uppercase tracking-wide mb-1">This month</div>
-            <div className="font-sans text-[20px] font-extrabold text-[var(--text-primary)]">₹{monthSpend.toLocaleString()}</div>
-          </div>
-          <div className="rounded-2xl px-4 py-3" style={{ background: 'var(--bg-surface-2)' }}>
-            <div className="font-body text-[11px] font-medium text-[var(--text-tertiary)] uppercase tracking-wide mb-1">Latest efficiency</div>
-            <div className="font-sans text-[20px] font-extrabold text-[var(--text-primary)]">
-              {latestKmpl !== null ? `${latestKmpl.toFixed(1)} km/L` : '—'}
+        {/* Header */}
+        <div className="px-4 pt-5 pb-2">
+          <div className="section-kicker mb-1">Moto</div>
+          <h1 className="font-sans text-[28px] font-extrabold tracking-tight text-[var(--text-primary)]">Fuel</h1>
+          <p className="mt-0.5 font-body text-[13px] text-[var(--text-secondary)]">
+            Log every fill and track your efficiency over time.
+          </p>
+        </div>
+
+        {/* Vehicle switcher */}
+        <div className="pt-2">
+          <VehicleSwitcher />
+        </div>
+
+        {/* Content */}
+        <div className="px-4 pt-3">
+          {activeVehicleId && logs.length > 0 && (
+            <div className="mb-4 grid grid-cols-2 gap-3">
+              <div className="rounded-2xl px-4 py-3" style={{ background: 'var(--bg-surface-2)' }}>
+                <div className="font-body text-[11px] font-medium text-[var(--text-tertiary)] uppercase tracking-wide mb-1">This month</div>
+                <div className="font-sans text-[20px] font-extrabold text-[var(--text-primary)]">₹{monthSpend.toLocaleString()}</div>
+              </div>
+              <div className="rounded-2xl px-4 py-3" style={{ background: 'var(--bg-surface-2)' }}>
+                <div className="font-body text-[11px] font-medium text-[var(--text-tertiary)] uppercase tracking-wide mb-1">Latest efficiency</div>
+                <div className="font-sans text-[20px] font-extrabold text-[var(--text-primary)]">
+                  {latestKmpl !== null ? `${latestKmpl.toFixed(1)} km/L` : '—'}
+                </div>
+              </div>
             </div>
-          </div>
+          )}
+
+          {!activeVehicleId && (
+            <EmptyState
+              icon={<Fuel size={20} strokeWidth={1.8} />}
+              headline="No vehicle selected"
+              subheadline="Select or add a vehicle above to view its fuel log."
+            />
+          )}
+
+          {activeVehicleId && logs.length === 0 && (
+            <EmptyState
+              icon={<Droplets size={20} strokeWidth={1.8} />}
+              headline="No fuel fills yet"
+              subheadline="Tap + to log your first fill — litres, price, odometer."
+            />
+          )}
+
+          {activeVehicleId && logs.length > 0 && (
+            <div className="flex flex-col gap-1.5">
+              {logs.map(log => (
+                <FuelRow key={log.id} log={log} kmpl={kmplByLogId.get(log.id)} />
+              ))}
+            </div>
+          )}
         </div>
-      )}
-
-      {!activeVehicleId && (
-        <EmptyState
-          icon={<Fuel size={20} strokeWidth={1.8} />}
-          headline="No vehicle selected"
-          subheadline="Select or add a vehicle above to view its fuel log."
-        />
-      )}
-
-      {activeVehicleId && logs.length === 0 && (
-        <EmptyState
-          icon={<Droplets size={20} strokeWidth={1.8} />}
-          headline="No fuel fills yet"
-          subheadline="Tap + to log your first fill — litres, price, odometer."
-        />
-      )}
-
-      {activeVehicleId && logs.length > 0 && (
-        <div className="flex flex-col gap-1.5">
-          {logs.map(log => (
-            <FuelRow key={log.id} log={log} kmpl={kmplByLogId.get(log.id)} />
-          ))}
-        </div>
-      )}
 
       </div>
     </div>

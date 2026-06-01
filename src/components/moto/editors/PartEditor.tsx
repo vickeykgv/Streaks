@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Trash2 } from 'lucide-react'
 import { partSchema, type PartFormValues } from '@/lib/schemas/moto'
@@ -7,7 +7,7 @@ import { partsRepo } from '@/db/repos/moto/parts'
 import { servicesRepo } from '@/db/repos/moto/services'
 import { vehiclesRepo } from '@/db/repos/moto/vehicles'
 import { toast } from '@/store/toastStore'
-import { ConfirmDialog } from '@/components/ui'
+import { ConfirmDialog, DatePicker } from '@/components/ui'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { format } from 'date-fns'
 
@@ -42,7 +42,7 @@ export function PartEditor({ id, vehicleId, onClose, onSaved }: PartEditorProps)
     [vehicleId],
   ) ?? []
 
-  const { register, handleSubmit, setValue, reset, formState: { errors, isSubmitting } } = useForm<PartFormValues>({
+  const { register, handleSubmit, control, setValue, reset, formState: { errors, isSubmitting } } = useForm<PartFormValues>({
     resolver: zodResolver(partSchema),
     defaultValues: {
       partName: '', installedAt: format(new Date(), 'yyyy-MM-dd'),
@@ -134,7 +134,11 @@ export function PartEditor({ id, vehicleId, onClose, onSaved }: PartEditorProps)
         {/* Install date + Odometer */}
         <div className="grid grid-cols-2 gap-2">
           <Field label="Installed on" error={errors.installedAt?.message}>
-            <input type="date" {...register('installedAt')} className={inputCls} />
+            <Controller
+              control={control}
+              name="installedAt"
+              render={({ field }) => <DatePicker value={field.value} onChange={field.onChange} />}
+            />
           </Field>
           <Field label="Odometer (km)" error={errors.odoKmAtInstall?.message}>
             <input type="number" {...register('odoKmAtInstall')} className={inputCls} placeholder="0" />

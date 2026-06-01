@@ -153,7 +153,7 @@ function CalendarStrip({ selectedDate, onSelect }: {
           >
             <span
               className="font-sans font-bold text-[10px] uppercase"
-              style={{ color: isSelected ? 'color-mix(in srgb, var(--text-on-brand) 74%, transparent)' : 'var(--text-tertiary)' }}
+              style={{ color: isSelected ? 'var(--text-on-brand)' : 'var(--text-tertiary)' }}
             >
               {format(d, 'EEE')}
             </span>
@@ -902,8 +902,8 @@ export default function Dashboard() {
               <span
                 className="font-sans font-extrabold text-[12px] px-2 py-0.5 rounded-full"
                 style={{
-                  background: allDone && totalToday > 0 ? 'rgba(34,197,94,0.12)' : 'rgba(99,102,241,0.12)',
-                  color: allDone && totalToday > 0 ? 'var(--color-done)' : 'var(--color-brand-500)',
+                  background: allDone && totalToday > 0 ? 'rgba(34,197,94,0.16)' : 'rgba(229,9,20,0.12)',
+                  color: allDone && totalToday > 0 ? 'var(--color-done)' : 'var(--text-secondary)',
                 }}
               >
                 {pct}%

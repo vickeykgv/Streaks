@@ -81,11 +81,25 @@ export default function MotoReports() {
   const isEmpty = fuelLogs.length === 0 && services.length === 0 && parts.length === 0
 
   return (
-    <div className="min-h-screen bg-app">
+    <div className="min-h-screen pb-28 bg-app">
       <DesktopPageHeader />
-      <div className="mx-auto w-full max-w-3xl px-4 py-6 pb-28">
-      <VehicleSwitcher />
+      <div className="mx-auto max-w-5xl">
 
+        {/* Header */}
+        <div className="px-4 pt-5 pb-2">
+          <div className="section-kicker mb-1">Moto</div>
+          <h1 className="font-sans text-[28px] font-extrabold tracking-tight text-[var(--text-primary)]">Reports</h1>
+          <p className="mt-0.5 font-body text-[13px] text-[var(--text-secondary)]">
+            Cost breakdowns, efficiency trends, and service history.
+          </p>
+        </div>
+
+        {/* Vehicle switcher */}
+        <div className="pt-2">
+          <VehicleSwitcher />
+        </div>
+
+      <div className="px-4 pt-3 pb-4">
       {/* Period selector */}
       <div className="mb-5 flex gap-1.5">
         {PERIODS.map(p => {
@@ -332,6 +346,7 @@ export default function MotoReports() {
 
         </div>
       )}
+      </div>
       </div>
     </div>
   )

@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { ExternalLink, Pencil, PlusCircle, Trash2 } from 'lucide-react'
+import { ChevronDown, ExternalLink, Pencil, PlusCircle, Trash2 } from 'lucide-react'
 import { vehiclesRepo } from '@/db/repos/moto/vehicles'
 import { vehicleDocsRepo } from '@/db/repos/moto/vehicleDocs'
 import { maintenanceItemsRepo } from '@/db/repos/moto/maintenanceItems'
@@ -116,6 +116,8 @@ function MaintenanceRow({ item }: { item: MotoMaintenanceItem }) {
 }
 
 function VehicleCard({ vehicle, isActive }: { vehicle: MotoVehicle; isActive: boolean }) {
+  const [expanded, setExpanded] = useState(false)
+
   const docs = useLiveQuery(
     () => vehicleDocsRepo.getAllForVehicle(vehicle.id),
     [vehicle.id],
@@ -136,8 +138,11 @@ function VehicleCard({ vehicle, isActive }: { vehicle: MotoVehicle; isActive: bo
         isActive && 'ring-2 ring-[var(--color-brand-500)]',
       )}
     >
-      {/* Vehicle summary row */}
-      <div className="flex items-start gap-4 p-4">
+      {/* Vehicle summary row — always visible, click to expand */}
+      <button
+        onClick={() => setExpanded(e => !e)}
+        className="flex items-start gap-4 p-4 w-full text-left"
+      >
         <div
           className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-[26px]"
           style={{ background: vehicle.color ? `${vehicle.color}22` : 'var(--bg-surface-2)', border: `2px solid ${vehicle.color || 'var(--border-subtle)'}` }}
@@ -178,73 +183,94 @@ function VehicleCard({ vehicle, isActive }: { vehicle: MotoVehicle; isActive: bo
           </div>
         </div>
 
-        <button
-          onClick={() => openMotoEditor({ kind: 'vehicle', id: vehicle.id })}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-[var(--bg-surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
-        >
-          <Pencil size={15} strokeWidth={2.2} />
-        </button>
-      </div>
-
-      {/* Divider */}
-      <div className="mx-4 border-t border-[var(--border-subtle)]" />
-
-      {/* Documents section */}
-      <div className="px-4 pt-3 pb-2">
-        <div className="flex items-center justify-between mb-1.5">
-          <span className="font-sans text-[11px] font-bold uppercase tracking-widest text-[var(--text-secondary)]">
-            📄 Documents
-          </span>
-          <button
-            onClick={() => openMotoEditor({ kind: 'vehicleDoc', vehicleId: vehicle.id })}
-            className="flex items-center gap-1 rounded-lg px-2 py-1 font-sans text-[11px] font-bold text-[var(--color-brand-500)] hover:bg-[var(--bg-surface-2)] transition-colors"
+        <div className="flex items-center gap-2 shrink-0">
+          <div
+            onClick={e => { e.stopPropagation(); openMotoEditor({ kind: 'vehicle', id: vehicle.id }) }}
+            role="button"
+            className="flex h-9 w-9 items-center justify-center rounded-2xl bg-[var(--bg-surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
           >
-            <PlusCircle size={12} strokeWidth={2.2} /> Add
-          </button>
-        </div>
-
-        {docs.length === 0 ? (
-          <p className="px-3 py-2 font-body text-[12px] text-[var(--text-tertiary)]">
-            No documents yet — add RC Book, PUC, Fitness Cert, etc.
-          </p>
-        ) : (
-          <div className="flex flex-col gap-0.5">
-            {docs.map(doc => <VehicleDocRow key={doc.id} doc={doc} />)}
+            <Pencil size={15} strokeWidth={2.2} />
           </div>
-        )}
-      </div>
-
-      {/* Divider */}
-      <div className="mx-4 border-t border-[var(--border-subtle)]" />
-
-      {/* Maintenance checklist section */}
-      <div className="px-4 pt-3 pb-3">
-        <div className="flex items-center justify-between mb-1.5">
-          <span className="font-sans text-[11px] font-bold uppercase tracking-widest text-[var(--text-secondary)]">
-            🔧 Maintenance log
-          </span>
-          <button
-            onClick={() => openMotoEditor({ kind: 'maintenanceItem', vehicleId: vehicle.id })}
-            className="flex items-center gap-1 rounded-lg px-2 py-1 font-sans text-[11px] font-bold text-[var(--color-brand-500)] hover:bg-[var(--bg-surface-2)] transition-colors"
+          <div
+            className="flex h-9 w-9 items-center justify-center rounded-2xl transition-all duration-200"
+            style={{
+              background: expanded ? 'rgba(229,9,20,0.14)' : 'var(--bg-surface-2)',
+              border: expanded ? '1px solid rgba(229,9,20,0.28)' : '1px solid var(--border-subtle)',
+            }}
           >
-            <PlusCircle size={12} strokeWidth={2.2} /> Add
-          </button>
+            <ChevronDown
+              size={17}
+              strokeWidth={2.5}
+              style={{ color: expanded ? 'var(--color-brand-500)' : 'var(--text-tertiary)', transition: 'transform 0.2s, color 0.2s', transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)' }}
+            />
+          </div>
         </div>
+      </button>
 
-        {maintenanceItems.length === 0 ? (
-          <p className="px-3 py-2 font-body text-[12px] text-[var(--text-tertiary)]">
-            No items yet — jot down issues to mention at your next service.
-          </p>
-        ) : (
-          <div className="flex flex-col gap-0.5">
-            {openItems.map(item => <MaintenanceRow key={item.id} item={item} />)}
-            {closedItems.length > 0 && openItems.length > 0 && (
-              <div className="my-1 mx-3 border-t border-[var(--border-subtle)]" />
+      {/* Expandable section: Documents + Maintenance log */}
+      {expanded && (
+        <>
+          {/* Divider */}
+          <div className="mx-4 border-t border-[var(--border-subtle)]" />
+
+          {/* Documents section */}
+          <div className="px-4 pt-3 pb-2">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="font-sans text-[11px] font-bold uppercase tracking-widest text-[var(--text-secondary)]">
+                📄 Documents
+              </span>
+              <button
+                onClick={() => openMotoEditor({ kind: 'vehicleDoc', vehicleId: vehicle.id })}
+                className="flex items-center gap-1 rounded-lg px-2 py-1 font-sans text-[11px] font-bold text-[var(--color-brand-500)] hover:bg-[var(--bg-surface-2)] transition-colors"
+              >
+                <PlusCircle size={12} strokeWidth={2.2} /> Add
+              </button>
+            </div>
+
+            {docs.length === 0 ? (
+              <p className="px-3 py-2 font-body text-[12px] text-[var(--text-tertiary)]">
+                No documents yet — add RC Book, PUC, Fitness Cert, etc.
+              </p>
+            ) : (
+              <div className="flex flex-col gap-0.5">
+                {docs.map(doc => <VehicleDocRow key={doc.id} doc={doc} />)}
+              </div>
             )}
-            {closedItems.map(item => <MaintenanceRow key={item.id} item={item} />)}
           </div>
-        )}
-      </div>
+
+          {/* Divider */}
+          <div className="mx-4 border-t border-[var(--border-subtle)]" />
+
+          {/* Maintenance checklist section */}
+          <div className="px-4 pt-3 pb-3">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="font-sans text-[11px] font-bold uppercase tracking-widest text-[var(--text-secondary)]">
+                🔧 Maintenance log
+              </span>
+              <button
+                onClick={() => openMotoEditor({ kind: 'maintenanceItem', vehicleId: vehicle.id })}
+                className="flex items-center gap-1 rounded-lg px-2 py-1 font-sans text-[11px] font-bold text-[var(--color-brand-500)] hover:bg-[var(--bg-surface-2)] transition-colors"
+              >
+                <PlusCircle size={12} strokeWidth={2.2} /> Add
+              </button>
+            </div>
+
+            {maintenanceItems.length === 0 ? (
+              <p className="px-3 py-2 font-body text-[12px] text-[var(--text-tertiary)]">
+                No items yet — jot down issues to mention at your next service.
+              </p>
+            ) : (
+              <div className="flex flex-col gap-0.5">
+                {openItems.map(item => <MaintenanceRow key={item.id} item={item} />)}
+                {closedItems.length > 0 && openItems.length > 0 && (
+                  <div className="my-1 mx-3 border-t border-[var(--border-subtle)]" />
+                )}
+                {closedItems.map(item => <MaintenanceRow key={item.id} item={item} />)}
+              </div>
+            )}
+          </div>
+        </>
+      )}
     </div>
   )
 }

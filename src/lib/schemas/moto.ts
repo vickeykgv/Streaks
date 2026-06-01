@@ -1,5 +1,10 @@
 import { z } from 'zod'
 
+const optionalPositiveNumber = z.preprocess(
+  v => (v === '' || v == null ? undefined : Number(v)),
+  z.number().positive().optional()
+)
+
 export const vehicleSchema = z.object({
   name:           z.string().min(1, 'Nickname is required').max(60),
   make:           z.string().min(1, 'Make is required').max(60),
@@ -9,7 +14,7 @@ export const vehicleSchema = z.object({
   vehicleType:    z.enum(['bike', 'car', 'scooter', 'other']).default('bike'),
   fuelType:       z.enum(['petrol', 'diesel', 'cng', 'electric', 'hybrid']).default('petrol'),
   currentOdoKm:  z.coerce.number().min(0, 'Odometer must be 0 or more').default(0),
-  tankCapacityL:  z.coerce.number().positive().optional(),
+  tankCapacityL:  optionalPositiveNumber,
   purchaseDate:   z.string().optional(),
   color:          z.string().min(1).default('#e50914'),
 })
@@ -37,7 +42,7 @@ export const serviceSchema = z.object({
   partsCost:      z.coerce.number().min(0).default(0),
   totalCost:      z.coerce.number().min(0).default(0),
   nextDueDate:    z.string().optional(),
-  nextDueOdoKm:  z.coerce.number().positive().optional(),
+  nextDueOdoKm:  optionalPositiveNumber,
   note:           z.string().max(500).optional(),
   linkedIssueIds: z.array(z.string()).default([]),
 })
@@ -50,8 +55,8 @@ export const partSchema = z.object({
   installedAt:       z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Install date required'),
   odoKmAtInstall:    z.coerce.number().min(0, 'Odometer required'),
   cost:              z.coerce.number().min(0).default(0),
-  expectedLifeKm:    z.coerce.number().positive().optional(),
-  expectedLifeMonths: z.coerce.number().positive().optional(),
+  expectedLifeKm:    optionalPositiveNumber,
+  expectedLifeMonths: optionalPositiveNumber,
   linkedServiceId:   z.string().optional(),
   note:              z.string().max(500).optional(),
 })
@@ -79,7 +84,7 @@ export const documentSchema = z.object({
   policyNo:           z.string().max(60).optional(),
   issuedDate:         z.string().optional(),
   expiryDate:         z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Expiry date required'),
-  premium:            z.coerce.number().positive().optional(),
+  premium:            optionalPositiveNumber,
   reminderDaysBefore: z.coerce.number().int().min(1).max(365).default(30),
   note:               z.string().max(500).optional(),
 })

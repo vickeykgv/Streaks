@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useForm, Controller } from 'react-hook-form'
+import { DatePicker } from '@/components/ui'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Trash2 } from 'lucide-react'
 import { vehicleSchema, type VehicleFormValues } from '@/lib/schemas/moto'
@@ -130,21 +131,19 @@ export function VehicleEditor({ id, onClose, onSaved }: VehicleEditorProps) {
     <div className="overflow-y-auto px-5 pb-6 pt-2">
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
 
-        {/* Name + Color */}
-        <div className="flex gap-3">
-          <div className="flex-1">
-            <Field label="Nickname" error={errors.name?.message}>
-              <input {...register('name')} className={inputCls} placeholder="e.g. My Honda" autoFocus />
-            </Field>
-          </div>
-          <div className="shrink-0 pt-6">
-            <Controller
-              control={control}
-              name="color"
-              render={({ field }) => <ColorPicker value={field.value} onChange={field.onChange} />}
-            />
-          </div>
-        </div>
+        {/* Nickname */}
+        <Field label="Nickname" error={errors.name?.message}>
+          <input {...register('name')} className={inputCls} placeholder="e.g. My Honda" autoFocus />
+        </Field>
+
+        {/* Color */}
+        <Field label="Color">
+          <Controller
+            control={control}
+            name="color"
+            render={({ field }) => <ColorPicker value={field.value} onChange={field.onChange} />}
+          />
+        </Field>
 
         {/* Make / Model / Year */}
         <div className="grid grid-cols-3 gap-2">
@@ -221,7 +220,11 @@ export function VehicleEditor({ id, onClose, onSaved }: VehicleEditorProps) {
             <input type="number" step="0.1" {...register('tankCapacityL')} className={inputCls} placeholder="e.g. 14.5" />
           </Field>
           <Field label="Purchase date — optional">
-            <input type="date" {...register('purchaseDate')} className={inputCls} />
+            <Controller
+              control={control}
+              name="purchaseDate"
+              render={({ field }) => <DatePicker value={field.value} onChange={field.onChange} placeholder="Pick a date" />}
+            />
           </Field>
         </div>
 
