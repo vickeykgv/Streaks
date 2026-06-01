@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useForm, Controller } from 'react-hook-form'
+import { useForm, Controller, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Trash2 } from 'lucide-react'
 import { serviceSchema, type ServiceFormValues } from '@/lib/schemas/moto'
@@ -72,7 +72,7 @@ export function ServiceEditor({ id, vehicleId, onClose, onSaved }: ServiceEditor
   ) ?? []
 
   const { register, handleSubmit, control, watch, setValue, reset, formState: { errors, isSubmitting } } = useForm<ServiceFormValues>({
-    resolver: zodResolver(serviceSchema),
+    resolver: zodResolver(serviceSchema) as Resolver<ServiceFormValues>,
     defaultValues: {
       date: format(new Date(), 'yyyy-MM-dd'),
       odoKm: 0, serviceType: 'general',

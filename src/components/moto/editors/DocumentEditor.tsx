@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useForm, Controller } from 'react-hook-form'
+import { useForm, Controller, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Trash2 } from 'lucide-react'
 import { documentSchema, type DocumentFormValues } from '@/lib/schemas/moto'
@@ -44,7 +44,7 @@ export function DocumentEditor({ id, vehicleId: initVehicleId, onClose, onSaved 
   const vehicles = useLiveQuery(() => vehiclesRepo.getAll(), []) ?? []
 
   const { register, handleSubmit, control, watch, setValue, reset, formState: { errors, isSubmitting } } = useForm<DocumentFormValues>({
-    resolver: zodResolver(documentSchema),
+    resolver: zodResolver(documentSchema) as Resolver<DocumentFormValues>,
     defaultValues: {
       type: initVehicleId ? 'insurance' : 'driving_license',
       vehicleId: initVehicleId ?? '',

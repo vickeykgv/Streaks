@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useForm, Controller } from 'react-hook-form'
+import { useForm, Controller, type Resolver } from 'react-hook-form'
 import { DatePicker } from '@/components/ui'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Trash2 } from 'lucide-react'
@@ -53,7 +53,7 @@ export function VehicleEditor({ id, onClose, onSaved }: VehicleEditorProps) {
   const { setActiveVehicle } = useMoto()
 
   const { register, handleSubmit, control, watch, setValue, reset, formState: { errors, isSubmitting } } = useForm<VehicleFormValues>({
-    resolver: zodResolver(vehicleSchema),
+    resolver: zodResolver(vehicleSchema) as Resolver<VehicleFormValues>,
     defaultValues: {
       name: '', make: '', model: '', year: new Date().getFullYear(),
       registrationNo: '', vehicleType: 'bike', fuelType: 'petrol',

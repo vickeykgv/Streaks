@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useForm, Controller } from 'react-hook-form'
+import { useForm, Controller, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Trash2 } from 'lucide-react'
 import { partSchema, type PartFormValues } from '@/lib/schemas/moto'
@@ -43,7 +43,7 @@ export function PartEditor({ id, vehicleId, onClose, onSaved }: PartEditorProps)
   ) ?? []
 
   const { register, handleSubmit, control, setValue, reset, formState: { errors, isSubmitting } } = useForm<PartFormValues>({
-    resolver: zodResolver(partSchema),
+    resolver: zodResolver(partSchema) as Resolver<PartFormValues>,
     defaultValues: {
       partName: '', installedAt: format(new Date(), 'yyyy-MM-dd'),
       odoKmAtInstall: 0, cost: 0,
