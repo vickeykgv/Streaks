@@ -1,0 +1,1 @@
+import{d as s,p as t}from"./vendor-dates-Di1lVl7_.js";function f(r,a){const e=s(t(r.expiryDate),t(a));let i="valid";return e<0?i="expired":e<=r.reminderDaysBefore&&(i="expiring"),{status:i,daysRemaining:e}}export{f as g};
