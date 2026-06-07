@@ -33,7 +33,7 @@ export function SyncStatusBadge() {
   if (syncError) {
     return (
       <button
-        onClick={() => syncNow()}
+        onClick={() => syncNow({ full: true })}
         className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
         style={{ background: 'var(--color-overdue-bg)' }}
         title="Couldn't sync — your changes are saved on this device and will retry automatically. Tap to retry now."
@@ -46,15 +46,21 @@ export function SyncStatusBadge() {
     )
   }
 
-  if (!lastSyncedAt) return null
+  const syncedLabel = lastSyncedAt
+    ? `Synced ${formatDistanceToNow(lastSyncedAt, { addSuffix: true })} · Tap to sync now`
+    : 'Tap to sync now'
 
   return (
-    <div
+    <button
+      onClick={() => syncNow({ full: true })}
       className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-[var(--bg-surface-2)]"
-      title={`Synced ${formatDistanceToNow(lastSyncedAt, { addSuffix: true })}`}
+      title={syncedLabel}
+      aria-label={syncedLabel}
     >
-      <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: 'var(--color-done)' }} />
-      <span className="sr-only">Synced {formatDistanceToNow(lastSyncedAt, { addSuffix: true })}</span>
-    </div>
+      <RefreshCw size={11} style={{ color: 'var(--text-secondary)' }} />
+      {lastSyncedAt && (
+        <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: 'var(--color-done)' }} />
+      )}
+    </button>
   )
 }

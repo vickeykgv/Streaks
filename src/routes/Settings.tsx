@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Moon, Sun, Monitor, Download, Upload, Trash2, ChevronRight, LogIn, LogOut, User, Bell, Wallet, Gauge } from 'lucide-react'
+import { Moon, Sun, Monitor, Download, Upload, Trash2, ChevronRight, LogIn, LogOut, User, Bell, Wallet, Gauge, RefreshCw } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { setTheme, type Theme } from '@/lib/theme'
 import { settingsRepo } from '@/db/repos/settings'
@@ -7,6 +7,8 @@ import { db } from '@/db/database'
 import { toast } from '@/store/toastStore'
 import { authClient } from '@/auth/client'
 import { useSession } from '@/auth/session'
+import { useAppStore } from '@/store/appStore'
+import { syncNow } from '@/sync/engine'
 import { downloadExport, importAll, exportTransactionsCsv, downloadMotoExport } from '@/lib/exportImport'
 import { categoriesRepo } from '@/db/repos/spending/categories'
 import { accountsRepo } from '@/db/repos/spending/accounts'
@@ -61,6 +63,7 @@ export default function Settings() {
   const [quietFrom, setQuietFrom] = useState('22:00')
   const [quietTo, setQuietTo] = useState('08:00')
   const { user } = useSession()
+  const syncing = useAppStore(s => s.syncing)
 
   useEffect(() => {
     settingsRepo.get<Theme>('theme', 'dark').then(v => setThemeState(v))
@@ -77,20 +80,29 @@ export default function Settings() {
     })
   }, [])
 
-  useEffect(() => {
-    if (!user) return
-    Promise.all([
-      db.habits.where('dirty').equals(1).count(),
-      db.tasks.where('dirty').equals(1).count(),
-      db.habitEntries.where('dirty').equals(1).count(),
-    ]).then(([h, t, e]) => setDirtyCount(h + t + e)).catch(() => {
+  const refreshDirtyCount = async () => {
+    try {
+      const [h, t, e] = await Promise.all([
+        db.habits.where('dirty').equals(1).count(),
+        db.tasks.where('dirty').equals(1).count(),
+        db.habitEntries.where('dirty').equals(1).count(),
+      ])
+      setDirtyCount(h + t + e)
+    } catch {
       // dirty is stored as boolean; fall back to a full scan
-      Promise.all([
+      const [h, t, e] = await Promise.all([
         db.habits.filter(r => !!r.dirty).count(),
         db.tasks.filter(r => !!r.dirty).count(),
         db.habitEntries.filter(r => !!r.dirty).count(),
-      ]).then(([h, t, e]) => setDirtyCount(h + t + e))
-    })
+      ])
+      setDirtyCount(h + t + e)
+    }
+  }
+
+  useEffect(() => {
+    if (!user) return
+    refreshDirtyCount()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 
   const handleTheme = async (t: Theme) => {
@@ -155,6 +167,20 @@ export default function Settings() {
     await authClient.signOut()
     setShowSignOutConfirm(false)
     toast.success('Signed out')
+  }
+
+  const handleSyncNow = async () => {
+    if (!navigator.onLine) {
+      toast.error("You're offline — changes will sync when you're back online")
+      return
+    }
+    await syncNow({ full: true })
+    await refreshDirtyCount()
+    if (useAppStore.getState().syncError) {
+      toast.error("Couldn't sync — we'll keep retrying automatically")
+    } else {
+      toast.success('Up to date')
+    }
   }
 
   const handleDeleteAccount = () => {
@@ -376,6 +402,16 @@ export default function Settings() {
                   label="Signed in as"
                   description={user.email}
                   right={<span />}
+                />
+                <SettingRow
+                  icon={<RefreshCw size={16} className={syncing ? 'animate-spin' : undefined} />}
+                  label={syncing ? 'Syncing…' : 'Sync now'}
+                  description={
+                    dirtyCount > 0
+                      ? `${dirtyCount} change${dirtyCount === 1 ? '' : 's'} pending · pull latest from your other devices`
+                      : 'Pull the latest from your other devices'
+                  }
+                  onClick={syncing ? undefined : handleSyncNow}
                 />
                 <SettingRow
                   icon={<LogOut size={16} />}

@@ -4,10 +4,41 @@ import { tasksRepo } from '@/db/repos/tasks'
 import { tagsRepo } from '@/db/repos/tags'
 import { entriesRepo } from '@/db/repos/entries'
 import { db } from '@/db/database'
+import { settingsRepo } from '@/db/repos/settings'
+
+// Supabase persists the auth session in localStorage under `sb-<ref>-auth-token`,
+// independently of IndexedDB. So a signed-in user can land here with an empty
+// local DB (new device, cleared storage, PWA reinstall, dev refresh).
+function hasPersistedSession(): boolean {
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (key?.startsWith('sb-') && key.endsWith('-auth-token')) {
+        const val = localStorage.getItem(key)
+        if (val && val !== 'null') return true
+      }
+    }
+  } catch {
+    // localStorage may be unavailable (private mode, SSR) — treat as no session
+  }
+  return false
+}
 
 export async function seedIfEmpty() {
+  // Never seed sample data for a signed-in user. The seed writes records with
+  // `dirty: true`, so they would be pushed to the cloud account and reappear on
+  // every login. Sample data is only for anonymous, pre-signup exploration.
+  if (hasPersistedSession()) return
+
+  // Seed at most once, ever — even if local data is later cleared — so we never
+  // re-inject (and re-push) duplicate sample records.
+  if (await settingsRepo.get<boolean>('seeded', false)) return
+
   const habitCount = await db.habits.count()
-  if (habitCount > 0) return
+  if (habitCount > 0) {
+    await settingsRepo.set('seeded', true)
+    return
+  }
 
   const today = format(new Date(), 'yyyy-MM-dd')
 
@@ -96,4 +127,6 @@ export async function seedIfEmpty() {
       completedAt: Date.now(),
     })
   }
+
+  await settingsRepo.set('seeded', true)
 }

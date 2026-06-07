@@ -63,7 +63,7 @@ function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
   })
 }
 
-export async function syncNow(): Promise<void> {
+export async function syncNow(opts?: { full?: boolean }): Promise<void> {
   const user = useSession.getState().user
   if (!user) return
   if (syncInProgress) return
@@ -74,7 +74,12 @@ export async function syncNow(): Promise<void> {
   useAppStore.getState().setSyncError(false)
 
   try {
-    const lastPulledAt = await settingsRepo.get<number>('lastPulledAt', 0)
+    // A full sync pulls everything (since = 0) instead of just changes since the
+    // last cursor. Used by the manual "Sync now" button so records are fetched
+    // even if the incremental cursor has drifted past them (e.g. device clock
+    // skew). The cursor is still advanced to serverTime below, so subsequent
+    // automatic syncs stay incremental.
+    const lastPulledAt = opts?.full ? 0 : await settingsRepo.get<number>('lastPulledAt', 0)
 
     // 1. PULL (with timeout — Android PWA standalone mode sometimes stalls fetches)
     const { serverTime, changes } = await withTimeout(pullChanges(lastPulledAt), SYNC_TIMEOUT_MS, 'pullChanges')
