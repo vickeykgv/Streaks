@@ -41,14 +41,57 @@ function Field({ label, hint, error, children }: {
   )
 }
 
-// Input wrapped with a ₹/km/L prefix or suffix affix
-function AffixInput({
-  prefix, suffix, inputRef, ...props
-}: React.InputHTMLAttributes<HTMLInputElement> & {
+// Group an integer string with Indian (en-IN) thousands separators, preserving
+// the decimal portion exactly as typed (so "1234." and "12.50" survive).
+function withCommas(cleaned: string): string {
+  if (cleaned === '') return ''
+  const dot = cleaned.indexOf('.')
+  const intPart = dot === -1 ? cleaned : cleaned.slice(0, dot)
+  const decPart = dot === -1 ? '' : cleaned.slice(dot + 1)
+  const groupedInt = intPart === '' ? '' : Number(intPart).toLocaleString('en-IN')
+  return dot === -1 ? groupedInt : `${groupedInt}.${decPart}`
+}
+
+// Format a numeric value for display (used when the value changes externally,
+// e.g. auto-calculated total cost).
+function formatValue(value: number | undefined, allowDecimal: boolean): string {
+  if (value == null || Number.isNaN(value)) return ''
+  return value.toLocaleString('en-IN', {
+    maximumFractionDigits: allowDecimal ? 2 : 0,
+  })
+}
+
+// Controlled numeric input with ₹/km/L affix and live comma grouping.
+// Emits `number | undefined`, never NaN.
+function NumberAffixInput({
+  value, onChange, allowDecimal = true, prefix, suffix, ...props
+}: Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'> & {
+  value: number | undefined
+  onChange: (v: number | undefined) => void
+  allowDecimal?: boolean
   prefix?: string
   suffix?: string
-  inputRef?: React.Ref<HTMLInputElement>
 }) {
+  const [text, setText] = useState(() => formatValue(value, allowDecimal))
+  const [focused, setFocused] = useState(false)
+
+  // Re-sync display when the value is changed from outside (auto-calc, reset)
+  // and the user isn't actively typing into this field.
+  useEffect(() => {
+    if (!focused) setText(formatValue(value, allowDecimal))
+  }, [value, focused, allowDecimal])
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let cleaned = e.target.value.replace(/,/g, '')
+    if (!allowDecimal) cleaned = cleaned.replace(/\./g, '')
+    // Allow only digits with an optional single decimal point
+    if (cleaned !== '' && !/^\d*\.?\d*$/.test(cleaned)) return
+    setText(withCommas(cleaned))
+    if (cleaned === '' || cleaned === '.') { onChange(undefined); return }
+    const num = Number(cleaned)
+    onChange(Number.isNaN(num) ? undefined : num)
+  }
+
   return (
     <div
       className="flex items-center h-11 rounded-xl overflow-hidden transition-colors focus-within:border-[var(--color-brand-500)]"
@@ -58,8 +101,12 @@ function AffixInput({
         <span className="pl-3.5 shrink-0 font-mono text-[15px] text-[var(--text-tertiary)]">{prefix}</span>
       )}
       <input
-        ref={inputRef}
         {...props}
+        type="text"
+        value={text}
+        onChange={handleChange}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
         className="flex-1 min-w-0 h-full bg-transparent font-sans text-[15px] font-semibold text-[var(--text-primary)] outline-none"
         style={{ paddingLeft: prefix ? '6px' : '14px', paddingRight: suffix ? '6px' : '14px' }}
       />
@@ -84,6 +131,9 @@ export function FuelLogEditor({ id, vehicleId, onClose, onSaved }: FuelLogEditor
   const [loading, setLoading] = useState(isEdit)
   const [showDelete, setShowDelete] = useState(false)
   const [vehicleOdo, setVehicleOdo] = useState<number | null>(null)
+  // Once the user manually overrides the total, stop auto-calculating it until
+  // they change volume or price again.
+  const [totalEdited, setTotalEdited] = useState(false)
 
   const {
     register, handleSubmit, control, watch, setValue, reset,
@@ -92,7 +142,7 @@ export function FuelLogEditor({ id, vehicleId, onClose, onSaved }: FuelLogEditor
     resolver: zodResolver(fuelLogSchema),
     defaultValues: {
       date: format(new Date(), 'yyyy-MM-dd'),
-      odoKm: 0, litres: 0, pricePerL: 0, totalCost: 0,
+      odoKm: undefined, litres: undefined, pricePerL: undefined, totalCost: undefined,
       fuelType: 'petrol', fullTank: true,
     },
   })
@@ -103,12 +153,12 @@ export function FuelLogEditor({ id, vehicleId, onClose, onSaved }: FuelLogEditor
   const pricePerL = watch('pricePerL')
   const odoKm     = watch('odoKm')
 
-  // Auto-compute totalCost from litres × pricePerL
+  // Auto-compute totalCost from litres × pricePerL until the user overrides it.
   useEffect(() => {
-    if (litres > 0 && pricePerL > 0) {
+    if (!totalEdited && litres && pricePerL && litres > 0 && pricePerL > 0) {
       setValue('totalCost', parseFloat((litres * pricePerL).toFixed(2)))
     }
-  }, [litres, pricePerL, setValue])
+  }, [litres, pricePerL, totalEdited, setValue])
 
   useEffect(() => {
     if (!isEdit) {
@@ -128,6 +178,7 @@ export function FuelLogEditor({ id, vehicleId, onClose, onSaved }: FuelLogEditor
         totalCost: l.totalCost, fuelType: l.fuelType, station: l.station ?? '',
         fullTank: l.fullTank, note: l.note ?? '',
       })
+      setTotalEdited(true) // keep the saved total; don't recompute on load
       setLoading(false)
     })
   }, [id, isEdit, vehicleId, onClose, reset, setValue])
@@ -202,50 +253,76 @@ export function FuelLogEditor({ id, vehicleId, onClose, onSaved }: FuelLogEditor
             hint={vehicleOdo !== null ? `last: ${vehicleOdo.toLocaleString()} km` : undefined}
             error={errors.odoKm?.message}
           >
-            <AffixInput
-              type="number"
-              inputMode="numeric"
-              suffix="km"
-              placeholder="0"
-              {...register('odoKm', { valueAsNumber: true })}
+            <Controller
+              control={control}
+              name="odoKm"
+              render={({ field }) => (
+                <NumberAffixInput
+                  value={field.value}
+                  onChange={field.onChange}
+                  allowDecimal={false}
+                  inputMode="numeric"
+                  suffix="km"
+                  placeholder="0"
+                />
+              )}
             />
           </Field>
         </div>
 
-        {/* Volume + Cost */}
+        {/* Volume + per-litre price (drive the auto-calculated total) */}
         <div className="grid grid-cols-2 gap-2">
           <Field label="Volume" error={errors.litres?.message}>
-            <AffixInput
-              type="number"
-              inputMode="decimal"
-              step="0.01"
-              suffix="L"
-              placeholder="0.0"
-              {...register('litres', { valueAsNumber: true })}
+            <Controller
+              control={control}
+              name="litres"
+              render={({ field }) => (
+                <NumberAffixInput
+                  value={field.value}
+                  onChange={(v) => { field.onChange(v); setTotalEdited(false) }}
+                  inputMode="decimal"
+                  suffix="L"
+                  placeholder="0.0"
+                />
+              )}
             />
           </Field>
-          <Field label="Total cost" error={errors.totalCost?.message}>
-            <AffixInput
-              type="number"
-              inputMode="decimal"
-              step="0.01"
-              prefix="₹"
-              placeholder="0"
-              {...register('totalCost', { valueAsNumber: true })}
+          <Field label="Price / litre" error={errors.pricePerL?.message}>
+            <Controller
+              control={control}
+              name="pricePerL"
+              render={({ field }) => (
+                <NumberAffixInput
+                  value={field.value}
+                  onChange={(v) => { field.onChange(v); setTotalEdited(false) }}
+                  inputMode="decimal"
+                  prefix="₹"
+                  suffix="/L"
+                  placeholder="0.00"
+                />
+              )}
             />
           </Field>
         </div>
 
-        {/* Per-litre price (used for auto-calc only) */}
-        <Field label="Price / litre" error={errors.pricePerL?.message}>
-          <AffixInput
-            type="number"
-            inputMode="decimal"
-            step="0.01"
-            prefix="₹"
-            suffix="/L"
-            placeholder="0.00"
-            {...register('pricePerL', { valueAsNumber: true })}
+        {/* Total cost — auto-calculated, editable */}
+        <Field
+          label="Total cost"
+          hint="auto = volume × price"
+          error={errors.totalCost?.message}
+        >
+          <Controller
+            control={control}
+            name="totalCost"
+            render={({ field }) => (
+              <NumberAffixInput
+                value={field.value}
+                onChange={(v) => { field.onChange(v); setTotalEdited(true) }}
+                inputMode="decimal"
+                prefix="₹"
+                placeholder="0"
+              />
+            )}
           />
         </Field>
 

@@ -22,10 +22,10 @@ export type VehicleFormValues = z.infer<typeof vehicleSchema>
 
 export const fuelLogSchema = z.object({
   date:        z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date required'),
-  odoKm:       z.coerce.number().min(0, 'Odometer required'),
-  litres:      z.coerce.number().positive('Litres must be > 0'),
-  pricePerL:   z.coerce.number().min(0, 'Price must be ≥ 0'),
-  totalCost:   z.coerce.number().min(0, 'Cost must be ≥ 0'),
+  odoKm:       z.number({ required_error: 'Odometer required', invalid_type_error: 'Odometer required' }).min(0, 'Odometer required'),
+  litres:      z.number({ required_error: 'Volume required', invalid_type_error: 'Volume required' }).positive('Litres must be > 0'),
+  pricePerL:   z.number({ required_error: 'Price required', invalid_type_error: 'Price required' }).min(0, 'Price must be ≥ 0'),
+  totalCost:   z.number({ required_error: 'Cost required', invalid_type_error: 'Cost required' }).min(0, 'Cost must be ≥ 0'),
   fuelType:    z.enum(['petrol', 'diesel', 'cng', 'electric', 'hybrid']).default('petrol'),
   station:     z.string().max(100).optional(),
   fullTank:    z.boolean().default(true),

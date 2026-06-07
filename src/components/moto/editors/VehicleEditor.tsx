@@ -28,6 +28,11 @@ const FUEL_TYPES: { value: FuelType; label: string; emoji: string }[] = [
 
 const inputCls = 'h-11 w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface-2)] px-3.5 font-sans text-[15px] font-semibold text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--color-brand-500)]'
 
+// Prevent the mouse wheel / trackpad scroll from silently incrementing or
+// decrementing a focused <input type="number"> — a common cause of odometer/
+// year values drifting by a few units while the user scrolls to the Save button.
+const blurOnWheel = (e: React.WheelEvent<HTMLInputElement>) => e.currentTarget.blur()
+
 function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
   return (
     <div>
@@ -154,7 +159,7 @@ export function VehicleEditor({ id, onClose, onSaved }: VehicleEditorProps) {
             <input {...register('model')} className={inputCls} placeholder="CB350" />
           </Field>
           <Field label="Year" error={errors.year?.message}>
-            <input type="number" {...register('year')} className={inputCls} placeholder="2022" />
+            <input type="number" onWheel={blurOnWheel} {...register('year')} className={inputCls} placeholder="2022" />
           </Field>
         </div>
 
@@ -210,14 +215,14 @@ export function VehicleEditor({ id, onClose, onSaved }: VehicleEditorProps) {
             <input {...register('registrationNo')} className={inputCls} placeholder="MH01AB1234" />
           </Field>
           <Field label="Odometer (km)" error={errors.currentOdoKm?.message}>
-            <input type="number" {...register('currentOdoKm')} className={inputCls} placeholder="0" />
+            <input type="number" onWheel={blurOnWheel} {...register('currentOdoKm')} className={inputCls} placeholder="0" />
           </Field>
         </div>
 
         {/* Tank + Purchase date (optional) */}
         <div className="grid grid-cols-2 gap-2">
           <Field label="Tank capacity (L) — optional">
-            <input type="number" step="0.1" {...register('tankCapacityL')} className={inputCls} placeholder="e.g. 14.5" />
+            <input type="number" step="0.1" onWheel={blurOnWheel} {...register('tankCapacityL')} className={inputCls} placeholder="e.g. 14.5" />
           </Field>
           <Field label="Purchase date — optional">
             <Controller
