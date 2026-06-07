@@ -32,9 +32,13 @@ serve(async (req) => {
     motoIssues = [], motoNotes = [], motoDocuments = [],
   } = body.changes ?? {}
 
-  // Stamp user_id on all records to enforce ownership
+  // Stamp every record with the server clock so all updated_at values and the
+  // pull cursor (serverTime) share one clock. Without this, records carry the
+  // writing device's Date.now(); if that clock is behind another device's
+  // lastPulledAt, the record's updated_at < since and it is never pulled. See KAN-9.
+  const serverNow = Date.now()
   const stamp = (records: Record<string, unknown>[]) =>
-    records.map(r => ({ ...r, user_id: user.id }))
+    records.map(r => ({ ...r, user_id: user.id, updated_at: serverNow }))
 
   const results = await Promise.allSettled([
     habits.length               && supabase.from('habits')               .upsert(stamp(habits),               { onConflict: 'id' }),
@@ -65,7 +69,7 @@ serve(async (req) => {
   }
 
   return new Response(
-    JSON.stringify({ ok: true, syncedAt: Date.now() }),
+    JSON.stringify({ ok: true, syncedAt: serverNow }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
   )
 })

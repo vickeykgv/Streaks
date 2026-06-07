@@ -8,7 +8,7 @@ import { logError } from '@/lib/errorLog'
 
 type SyncRecord = { id: string; updatedAt: number; deletedAt?: number; syncedAt?: number; dirty: boolean }
 
-async function mergeIntoTable<T extends SyncRecord>(
+export async function mergeIntoTable<T extends SyncRecord>(
   table: Table<T, string>,
   serverRecords: T[],
 ): Promise<void> {
@@ -28,10 +28,16 @@ async function mergeIntoTable<T extends SyncRecord>(
 
     if (!localRecord) {
       await table.add({ ...serverRecord, dirty: false } as T)
+    } else if (localRecord.dirty) {
+      // Local has an unsynced edit — keep it; it will be pushed next. Never let
+      // a pulled copy overwrite a dirty record. (Comparing updatedAt here is not
+      // safe once the server stamps updatedAt on push: a device whose clock is
+      // behind the server could see serverRecord.updatedAt > its own pending
+      // edit's timestamp and silently lose the edit.)
+      continue
     } else if (serverRecord.updatedAt > localRecord.updatedAt) {
       await table.put({ ...serverRecord, dirty: false } as T)
     }
-    // If local is newer (dirty = true), leave it — will be pushed next
   }
 }
 
